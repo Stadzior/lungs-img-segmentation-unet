@@ -1,4 +1,4 @@
-# KerasPlayground
+# Lungs image segmentation U-net
 Repo created for learning and experimenting with Keras AI framework.
 
 ## Quick config:  
@@ -6,7 +6,7 @@ Repo created for learning and experimenting with Keras AI framework.
 2. Install Miniconda  
    - Install for **Just Me**  
    - Add Anaconda to my **PATH enviromantal variables**   
-   - **Untick** "*Register Anaconda as my default Python 3.7*" (If you have another python copy of python installed)     
+   - **Untick** "*Register Anaconda as my default Python 3.7*" (If you have another python copy installed)     
 3. In cmd: 
    - `conda create -n tfgpu tensorflow-gpu SimpleITK pillow keras matplotlib scikit-image`  
    - `activate tfgpu`    
