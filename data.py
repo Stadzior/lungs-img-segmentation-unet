@@ -4,17 +4,13 @@ import skimage.transform as transform
 import skimage.io as io
 import os
 
-def NormalizeData(img, mask):
-    #normalization
-    img = img / 255
-    mask = mask /255
-    #tresholding
-    mask[mask > 0.5] = 1
-    mask[mask <= 0.5] = 0
-    return (img, mask)
+def ThresholdImage(img, threshold):    
+    img[img > threshold] = 1
+    img[img <= threshold] = 0
+    return img
 
 def CreateTrainGenerator(train_path, batch_size, target_size, image_dir, mask_dir, aug_dir, aug_parameters,
-                         image_color_mode = "grayscale", mask_color_mode = "grayscale", seed = 1):
+                         bit_depth, threshold, image_color_mode = "grayscale", mask_color_mode = "grayscale", seed = 1):
     #data augmentation
     image_generator = ImageDataGenerator(**aug_parameters)
     image_generator = image_generator.flow_from_directory(
@@ -43,14 +39,16 @@ def CreateTrainGenerator(train_path, batch_size, target_size, image_dir, mask_di
     train_generator = zip(image_generator, mask_generator)
 
     for (img, mask) in train_generator:
-        img, mask = NormalizeData(img, mask)
+        #normalization
+        img = img / bit_depth
+        mask = ThresholdImage(mask / bit_depth, threshold)        
         yield (img, mask)
 
-def CreateTestGenerator(test_path, target_size):
+def CreateTestGenerator(test_path, target_size, bit_depth, threshold):
     test_filenames = list(filter(lambda x: x.endswith(".png"), os.listdir(test_path)))
     for filename in test_filenames:
         img = io.imread("{0}/{1}".format(test_path, filename), True)
-        img = img / 255
+        img = ThresholdImage(img / bit_depth, threshold)
         img = transform.resize(img, target_size)
         #extend to 4 dims
         img = np.reshape(img, img.shape+(1,))
