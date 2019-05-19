@@ -14,7 +14,8 @@ IMAGE_DIR = 'image'
 MASK_DIR = 'mask'
 AUG_DIR = 'aug'
 STEPS = 3
-BIT_DEPTH = 255
+BIT_DEPTH = 8
+MAX_VALUE = math.pow(2, BIT_DEPTH)-1
 THRESHOLD = 0.5
 AUG_PARAMETERS = dict(rotation_range=0.2,
                     width_shift_range=0.05,
@@ -42,13 +43,14 @@ model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
 
 #Executing training with timestamps and measurements
 trainGenerator = CreateTrainGenerator(TRAIN_PATH, BATCH_SIZE, TARGET_SIZE, IMAGE_DIR, MASK_DIR, AUG_DIR,
-                                      AUG_PARAMETERS, BIT_DEPTH, THRESHOLD)
+                                      AUG_PARAMETERS, MAX_VALUE, THRESHOLD)
 ExecuteWithTimestamps("Training", lambda _ = None: model.fit_generator(trainGenerator, SAMPLE_COUNT, EPOCH_COUNT))   
 
 #Executing testing with timestamps and measurements
-testGenerator = CreateTestGenerator(TEST_PATH, TARGET_SIZE, BIT_DEPTH, THRESHOLD)
+testGenerator = CreateTestGenerator(TEST_PATH, TARGET_SIZE, MAX_VALUE)
 result = ExecuteWithTimestamps("Testing", lambda _ = None: (model.predict_generator(testGenerator, STEPS, verbose = 1)))
 
 #Executing result saving with timestamps and measurements
+save_path = "{0}/result_{1}".format(TEST_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
 ExecuteWithTimestamps("Saving results", lambda _ = None: 
-    SaveResult(TEST_PATH, "{0}/result_{1}".format(TEST_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S")), result))
+    SaveResult(TEST_PATH, save_path, result, THRESHOLD))
