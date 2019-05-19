@@ -45,18 +45,22 @@ def CreateTrainGenerator(train_path, batch_size, target_size, image_dir, mask_di
     for (img, mask) in train_generator:
         img, mask = NormalizeData(img, mask)
         yield (img, mask)
-        
-def CreateTestGenerator(test_path, target_size, img_limit = None):
-    img_filenames = list(filter(lambda img_filename: 
-                                    img_filename.endswith(".png"), os.listdir(test_path)))[:img_limit]
-    for img_filename in img_filenames:
-        img = io.imread("{0}/{1}".format(test_path, img_filename), True)
+
+def CreateTestGenerator(test_path, target_size):
+    test_filenames = list(filter(lambda x: x.endswith(".png"), os.listdir(test_path)))
+    for filename in test_filenames:
+        img = io.imread("{0}/{1}".format(test_path, filename), True)
         img = img / 255
         img = transform.resize(img, target_size)
+        #extend to 4 dims
         img = np.reshape(img, img.shape+(1,))
         img = np.reshape(img, (1,)+img.shape)
-        yield (img_filename, img)
+        yield img
 
-def SaveResult(save_path, result):
-    for (img_filename, img) in result:
-        io.imsave("{0}/{1}".format(save_path, img_filename), img)
+def SaveResult(test_path, save_path, result):    
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    img_filenames = list(filter(lambda x: x.endswith(".png"), os.listdir(test_path)))
+    for i, img in enumerate(result):
+        img = img[:,:,0]
+        io.imsave("{0}/{1}".format(save_path, img_filenames[i]), img)
