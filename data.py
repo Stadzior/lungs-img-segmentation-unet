@@ -56,8 +56,6 @@ def CreateTestGenerator(test_path, target_size, max_value):
         yield img
 
 def SaveResult(test_path, save_path, result, threshold):    
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
     img_filenames = list(filter(lambda x: x.endswith(".png"), os.listdir(test_path)))
     for i, img in enumerate(result):
         img = ThresholdImage(img[:,:,0], threshold)
