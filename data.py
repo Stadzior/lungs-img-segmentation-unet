@@ -53,7 +53,8 @@ def CreateTestGenerator(test_path, target_size, img_limit = None):
         img = transform.resize(img, target_size)
         # img = np.reshape(img, img.shape+(1,))
         # img = np.reshape(img, (1,)+img.shape)
-        yield img
+        yield (img_filename, img)
 
-def SaveResult(save_path, npy_file):
-    dummy = "dumm dumm dumm"
+def SaveResult(save_path, result):
+    for (img_filename, img) in result:
+        io.imsave(os.path.join(save_path,"{%s}.png".format(img_filename)), img)

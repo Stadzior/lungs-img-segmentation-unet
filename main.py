@@ -43,4 +43,5 @@ testGenerator = CreateTestGenerator(TEST_PATH, TARGET_SIZE)
 result = ExecuteWithTimestamps("Testing", lambda _: (model.predict_generator(testGenerator, STEPS, verbose = 1)))
 
 #Executing result saving with timestamps and measurements
-SaveResult("{%s}/{result_%s}".format(TEST_PATH, datetime.datetime.now.strftime("%d%m%Y_%H%M%S")), result)
+ExecuteWithTimestamps("Saving results", lambda _: 
+    SaveResult("{%s}/{result_%s}".format(TEST_PATH, datetime.datetime.now.strftime("%d%m%Y_%H%M%S")), result))
