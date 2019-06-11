@@ -1,12 +1,15 @@
 from model import *
-from data import *    
+from dataHelper import *    
+from tensorboardHelper import *
+from logHelper import *
 import time
 import datetime
 import math
+from tensorflow.python.keras.callbacks import TensorBoard
 
 TARGET_SIZE = (512, 512)
 EPOCH_COUNT = 2
-SAMPLE_COUNT = 1000
+SAMPLE_COUNT = 300
 BATCH_SIZE = 1
 TRAIN_PATH = 'data/train'
 TEST_PATH = 'data/test'
@@ -62,15 +65,21 @@ def LogParameters(log_file_path):
 
 save_path = "{0}/result_{1}".format(TEST_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
 log_file_path = "{0}/log.txt".format(save_path)
+tensorboard_log_path = "{0}/tensorboard"
+
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 LogParameters(log_file_path)
 
+tensorboardServer = TensorboardHelper(tensorboard_log_path)
+tensorboardServer.run()
+
+tensorboard = TensorBoard(tensorboard_log_path)
 model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
 #Executing training with timestamps and measurements
 trainGenerator = CreateTrainGenerator(TRAIN_PATH, BATCH_SIZE, TARGET_SIZE, IMAGE_DIR, MASK_DIR, AUG_DIR,
                                     AUG_PARAMETERS, MAX_VALUE, THRESHOLD)
-ExecuteWithLogs("Training", log_file_path, lambda _ = None: model.fit_generator(trainGenerator, SAMPLE_COUNT, EPOCH_COUNT))   
+ExecuteWithLogs("Training", log_file_path, lambda _ = None: model.fit_generator(trainGenerator, SAMPLE_COUNT, EPOCH_COUNT, callbacks = [tensorboard]))   
 
 #Executing testing with timestamps and measurements
 testGenerator = CreateTestGenerator(TEST_PATH, TARGET_SIZE, MAX_VALUE)
@@ -79,3 +88,5 @@ result = ExecuteWithLogs("Testing", log_file_path, lambda _ = None: (model.predi
 #Executing result saving with timestamps and measurements
 ExecuteWithLogs("Saving results", log_file_path, lambda _ = None: 
     SaveResult(TEST_PATH, save_path, result, THRESHOLD))
+
+input("You can now go to Tensorboard url and look into the statistics.\n To end session and kill Tensorboard instance press any key...")
