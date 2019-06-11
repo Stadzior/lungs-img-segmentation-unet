@@ -5,8 +5,8 @@ from logHelper import *
 from tensorflow.python.keras.callbacks import TensorBoard
 
 TARGET_SIZE = (512, 512)
-EPOCH_COUNT = 2
-SAMPLE_COUNT = 300
+EPOCH_COUNT = 3
+SAMPLE_COUNT = 1000
 BATCH_SIZE = 1
 TRAIN_PATH = 'data/train'
 TEST_PATH = 'data/test'
@@ -27,7 +27,6 @@ AUG_PARAMETERS = dict(rotation_range=0.2,
    
 save_path = "{0}/result_{1}".format(TEST_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
 log_file_path = "{0}/log.txt".format(save_path)
-tensorboard_log_path = "{0}/tensorboard"
 
 if not os.path.exists(save_path):
     os.makedirs(save_path)
@@ -35,10 +34,10 @@ if not os.path.exists(save_path):
 LogParameters(log_file_path, TARGET_SIZE, EPOCH_COUNT, SAMPLE_COUNT,
                   BATCH_SIZE, STEPS, BIT_DEPTH, THRESHOLD, AUG_PARAMETERS)
 
-tensorboardServer = TensorboardHelper(tensorboard_log_path)
+tensorboardServer = TensorboardHelper(save_path)
 tensorboardServer.run()
 
-tensorboard = TensorBoard(tensorboard_log_path)
+tensorboard = TensorBoard(save_path)
 model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
 #Executing training with timestamps and measurements
 trainGenerator = CreateTrainGenerator(TRAIN_PATH, BATCH_SIZE, TARGET_SIZE, IMAGE_DIR, MASK_DIR, AUG_DIR,
