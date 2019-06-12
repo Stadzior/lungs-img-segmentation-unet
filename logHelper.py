@@ -37,3 +37,7 @@ def LogParameters(log_file_path, target_size, epoch_count, sample_count,
         log_file.write("zoom range: {0}\n".format(aug_parameters.get("zoom_range")))
         log_file.write("horizontal flip: {0}\n".format(aug_parameters.get("horizontal_flip")))
         log_file.write("fill mode: {0}\n".format(aug_parameters.get("fill_mode")))
+
+def LogAccuracyAndLoss(log_file_path, accuracy, loss):
+    with open(log_file_path, 'a') as log_file:
+        log_file.write("Accuracy: {0},  Loss: {1}\n".format(accuracy, loss))

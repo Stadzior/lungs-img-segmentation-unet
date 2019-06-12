@@ -3,10 +3,11 @@ from dataHelper import *
 from tensorboardHelper import *
 from logHelper import *
 from tensorflow.python.keras.callbacks import TensorBoard
+from customCallbacks import AccuracyAndLossCallback
 
 TARGET_SIZE = (512, 512)
-EPOCH_COUNT = 3
-SAMPLE_COUNT = 1000
+EPOCH_COUNT = 2
+SAMPLE_COUNT = 400
 BATCH_SIZE = 1
 TRAIN_PATH = 'data/train'
 TEST_PATH = 'data/test'
@@ -37,12 +38,13 @@ LogParameters(log_file_path, TARGET_SIZE, EPOCH_COUNT, SAMPLE_COUNT,
 tensorboardServer = TensorboardHelper(save_path)
 tensorboardServer.run()
 
-tensorboard = TensorBoard(save_path)
+tensorboardCallback = TensorBoard(save_path)
+accuracyAndLossCallback = AccuracyAndLossCallback()
 model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
 #Executing training with timestamps and measurements
 trainGenerator = CreateTrainGenerator(TRAIN_PATH, BATCH_SIZE, TARGET_SIZE, IMAGE_DIR, MASK_DIR, AUG_DIR,
                                     AUG_PARAMETERS, MAX_VALUE, THRESHOLD)
-ExecuteWithLogs("Training", log_file_path, lambda _ = None: model.fit_generator(trainGenerator, SAMPLE_COUNT, EPOCH_COUNT, callbacks = [tensorboard]))   
+ExecuteWithLogs("Training", log_file_path, lambda _ = None: model.fit_generator(trainGenerator, SAMPLE_COUNT, EPOCH_COUNT, callbacks = [tensorboardCallback, accuracyAndLossCallback]))   
 
 #Executing testing with timestamps and measurements
 testGenerator = CreateTestGenerator(TEST_PATH, TARGET_SIZE, MAX_VALUE)
@@ -51,5 +53,7 @@ result = ExecuteWithLogs("Testing", log_file_path, lambda _ = None: (model.predi
 #Executing result saving with timestamps and measurements
 ExecuteWithLogs("Saving results", log_file_path, lambda _ = None: 
     SaveResult(TEST_PATH, save_path, result, THRESHOLD))
+
+LogAccuracyAndLoss(log_file_path, accuracyAndLossCallback.accuracy, accuracyAndLossCallback.loss)
 
 input("You can now go to Tensorboard url and look into the statistics.\n To end session and kill Tensorboard instance press any key...")
