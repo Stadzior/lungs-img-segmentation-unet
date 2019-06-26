@@ -11,11 +11,11 @@ def ThresholdImage(img, threshold):
     img[img <= threshold] = 0
     return img
 
-def CreateTrainGenerator(train_path, batch_size, target_size, image_dir, mask_dir, aug_dir, aug_parameters,
+def CreateTrainGeneratorWithAugmentation(train_path, batch_size, target_size, image_dir, mask_dir, aug_dir, aug_parameters,
                          max_value, threshold, image_color_mode = "grayscale", mask_color_mode = "grayscale", seed = 1):
     #data augmentation
     image_generator = ImageDataGenerator(**aug_parameters)
-    image_generator = image_generator.flow_from_directory(
+    image_set = image_generator.flow_from_directory(
         train_path,
         classes = [image_dir],
         class_mode = None,
@@ -27,7 +27,7 @@ def CreateTrainGenerator(train_path, batch_size, target_size, image_dir, mask_di
         seed = seed)
 
     mask_generator = ImageDataGenerator(**aug_parameters)
-    mask_generator = mask_generator.flow_from_directory(
+    mask_set = mask_generator.flow_from_directory(
         train_path,
         classes = [mask_dir],
         class_mode = None,
@@ -38,9 +38,20 @@ def CreateTrainGenerator(train_path, batch_size, target_size, image_dir, mask_di
         save_prefix  = mask_dir,
         seed = seed)
 
-    train_generator = zip(image_generator, mask_generator)
+    train_set = zip(image_set, mask_set)
 
-    for (img, mask) in train_generator:
+    for (img, mask) in train_set:
+        #normalization
+        img = img / max_value
+        mask = ThresholdImage(mask / max_value, threshold)        
+        yield (img, mask)
+
+def CreateTrainGenerator(train_path, image_dir, mask_dir, max_value, threshold):
+    #data augmentation    
+    image_set = list(filter(lambda x: x.endswith(".png"), os.listdir("{0}/{1}".format(train_path, image_dir))))
+    mask_set = list(filter(lambda x: x.endswith(".png"), os.listdir("{0}/{1}".format(train_path, mask_dir))))
+    train_set = zip(image_set, mask_set)
+    for (img, mask) in train_set:
         #normalization
         img = img / max_value
         mask = ThresholdImage(mask / max_value, threshold)        
@@ -70,21 +81,24 @@ def ClearSets(train_path, test_path, image_dir, mask_dir, aug_dir):
             os.remove("{0}/{1}".format(path, file))
 
 def DivideAndFeedSets(source_path, train_path, test_path, image_dir, mask_dir, train_to_test_ratio, sample_count = 0):
-    png_files = list(filter(lambda x: x.endswith(".png") and not "MM" in x, os.listdir(source_path)))
-    train_set_count = round(len(png_files)*train_to_test_ratio)
-    test_set_count = len(png_files) - train_set_count
+    image_source_path = "{0}/{1}".format(source_path, image_dir)
+    mask_source_path = "{0}/{1}".format(source_path, mask_dir)
+    png_files = list(filter(lambda x: x.endswith(".png"), os.listdir(image_source_path)))  
     random.shuffle(png_files)
+    sample_count = sample_count if sample_count > 0 else len(png_files)
+    train_set_count = round(sample_count * train_to_test_ratio)
+    test_set_count = sample_count - train_set_count
     train_set = png_files[:train_set_count]
-    train_set = train_set[:sample_count] if sample_count > 0 else train_set
-    test_set = png_files[test_set_count:]
-    test_set = test_set[:sample_count] if sample_count > 0 else test_set
-    for train_sample in train_set:
-        image_filename = train_sample
-        mask_filename = list(filter(lambda x: x.startswith(image_filename) and "MM" in x and x.endswith(".png"), os.listdir(source_path)))
-        copyfile("{0}/{1}".format(source_path, image_filename), "{0}/{1}/{2}".format(train_path, image_dir, image_filename))
-        copyfile("{0}/{1}".format(source_path, mask_filename), "{0}/{1}/{2}".format(train_path, mask_dir, mask_filename))
-    for test_sample in test_set:
-        image_filename = test_sample
-        mask_filename = list(filter(lambda x: x.startswith(image_filename) and "MM" in x and x.endswith(".png"), os.listdir(source_path)))
-        copyfile("{0}/{1}".format(source_path, image_filename), "{0}/{1}/{2}".format(test_path, image_dir, image_filename))
-        copyfile("{0}/{1}".format(source_path, mask_filename), "{0}/{1}/{2}".format(test_path, mask_dir, mask_filename))
+    test_set = png_files[-test_set_count:]
+    print("Copying from source to train dir")
+    for i, image_filename in enumerate(train_set):
+        print ("{0}/{1}".format(i, train_set_count))
+        mask_filename = list(filter(lambda x: x.replace("_Delmon_CompleteMM", "").startswith(image_filename) and x.endswith(".png"), os.listdir(mask_source_path)))[0]
+        copyfile("{0}/{1}".format(image_source_path, image_filename), "{0}/{1}/{2}".format(train_path, image_dir, image_filename))
+        copyfile("{0}/{1}".format(mask_source_path, mask_filename), "{0}/{1}/{2}".format(train_path, mask_dir, mask_filename))    
+    print("Copying from source to test dir")
+    for i, image_filename in enumerate(test_set):        
+        print ("{0}/{1}".format(i, test_set_count))
+        mask_filename = list(filter(lambda x: x.replace("_Delmon_CompleteMM", "").startswith(image_filename) and x.endswith(".png"), os.listdir(mask_source_path)))[0]
+        copyfile("{0}/{1}".format(image_source_path, image_filename), "{0}/{1}".format(test_path, image_filename))
+        copyfile("{0}/{1}".format(mask_source_path, mask_filename), "{0}/{1}".format(test_path, mask_filename))
