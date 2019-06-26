@@ -5,6 +5,7 @@ import skimage.io as io
 import os
 import random
 from shutil import copyfile
+from PIL import Image
 
 def ThresholdImage(img, threshold):    
     img[img > threshold] = 1
@@ -48,13 +49,22 @@ def CreateTrainGeneratorWithAugmentation(train_path, batch_size, target_size, im
 
 def CreateTrainGenerator(train_path, image_dir, mask_dir, max_value, threshold):
     #data augmentation    
-    image_set = list(filter(lambda x: x.endswith(".png"), os.listdir("{0}/{1}".format(train_path, image_dir))))
-    mask_set = list(filter(lambda x: x.endswith(".png"), os.listdir("{0}/{1}".format(train_path, mask_dir))))
-    train_set = zip(image_set, mask_set)
-    for (img, mask) in train_set:
-        #normalization
+    image_filenames = list(filter(lambda x: x.endswith(".png"), os.listdir("{0}/{1}".format(train_path, image_dir))))
+    mask_filenames = list(filter(lambda x: x.endswith(".png"), os.listdir("{0}/{1}".format(train_path, mask_dir))))
+    train_set_filenames = zip(image_filenames, mask_filenames)
+    for (img_filename, mask_filename) in train_set_filenames:
+
+        img = Image.open(img_filename, mode='r')
+        img_array = np.asarray(img)
+        img = ExtendToFourDims(img)
         img = img / max_value
-        mask = ThresholdImage(mask / max_value, threshold)        
+        
+        mask = Image.open(mask_filename, mode='r')
+        mask_array = np.asarray(mask)
+        mask = ExtendToFourDims(mask)
+        mask = mask / max_value
+        mask = ThresholdImage(mask / max_value, threshold)      
+          
         yield (img, mask)
 
 def CreateTestGenerator(test_path, target_size, max_value):
@@ -63,10 +73,7 @@ def CreateTestGenerator(test_path, target_size, max_value):
         img = io.imread("{0}/{1}".format(test_path, filename), True)
         img = img / max_value
         img = transform.resize(img, target_size)
-        #extend to 4 dims
-        img = np.reshape(img, img.shape+(1,))
-        img = np.reshape(img, (1,)+img.shape)
-        yield img
+        yield ExtendToFourDims(img)
 
 def SaveResult(test_path, save_path, result, threshold):    
     png_files = list(filter(lambda x: x.endswith(".png"), os.listdir(test_path)))
@@ -102,3 +109,8 @@ def DivideAndFeedSets(source_path, train_path, test_path, image_dir, mask_dir, t
         mask_filename = list(filter(lambda x: x.replace("_Delmon_CompleteMM", "").startswith(image_filename) and x.endswith(".png"), os.listdir(mask_source_path)))[0]
         copyfile("{0}/{1}".format(image_source_path, image_filename), "{0}/{1}".format(test_path, image_filename))
         copyfile("{0}/{1}".format(mask_source_path, mask_filename), "{0}/{1}".format(test_path, mask_filename))
+
+def ExtendToFourDims(img):
+    img = np.reshape(img, img.shape+(1,))
+    img = np.reshape(img, (1,)+img.shape)
+    return img

@@ -7,7 +7,7 @@ from customCallbacks import AccuracyAndLossCallback
 
 TARGET_SIZE = (512, 512)
 EPOCH_COUNT = 2
-SAMPLE_COUNT = 500
+SAMPLE_COUNT = 10
 TRAIN_TO_TEST_RATIO = 0.8
 BATCH_SIZE = 1
 SOURCE_PATH = 'data/source'
@@ -49,8 +49,8 @@ accuracyAndLossCallback = AccuracyAndLossCallback()
 model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
 
 #Executing training with timestamps and measurements
-# trainGenerator = CreateTrainGeneratorWithAugmentation(TRAIN_PATH, BATCH_SIZE, TARGET_SIZE, IMAGE_DIR, MASK_DIR, AUG_DIR, AUG_PARAMETERS, MAX_VALUE, THRESHOLD)
-trainGenerator = CreateTrainGenerator(TRAIN_PATH, IMAGE_DIR, MASK_DIR, MAX_VALUE, THRESHOLD)
+trainGenerator = CreateTrainGeneratorWithAugmentation(TRAIN_PATH, BATCH_SIZE, TARGET_SIZE, IMAGE_DIR, MASK_DIR, AUG_DIR, AUG_PARAMETERS, MAX_VALUE, THRESHOLD)
+#trainGenerator = CreateTrainGenerator(TRAIN_PATH, IMAGE_DIR, MASK_DIR, MAX_VALUE, THRESHOLD)
 
 ExecuteWithLogs("Training", log_file_path, lambda _ = None: model.fit_generator(trainGenerator, SAMPLE_COUNT, EPOCH_COUNT, callbacks = [tensorboardCallback, accuracyAndLossCallback]))   
 
