@@ -3,6 +3,8 @@ import numpy as np
 import skimage.transform as transform
 import skimage.io as io
 import os
+import random
+from shutil import copyfile
 
 def ThresholdImage(img, threshold):    
     img[img > threshold] = 1
@@ -56,13 +58,33 @@ def CreateTestGenerator(test_path, target_size, max_value):
         yield img
 
 def SaveResult(test_path, save_path, result, threshold):    
-    img_filenames = list(filter(lambda x: x.endswith(".png"), os.listdir(test_path)))
+    png_files = list(filter(lambda x: x.endswith(".png"), os.listdir(test_path)))
     for i, img in enumerate(result):
         img = ThresholdImage(img[:,:,0], threshold)
-        io.imsave("{0}/{1}".format(save_path, img_filenames[i]), img)
+        io.imsave("{0}/{1}".format(save_path, png_files[i]), img)
 
 def ClearSets(train_path, test_path, image_dir, mask_dir, aug_dir):
     for path in [test_path, "{0}/{1}".format(train_path, image_dir), "{0}/{1}".format(train_path, mask_dir), "{0}/{1}".format(train_path, aug_dir)]: 
-        pngFiles = list(filter(lambda x: x.endswith(".png"), os.listdir(path)))
-        for file in pngFiles:
+        png_files = list(filter(lambda x: x.endswith(".png"), os.listdir(path)))
+        for file in png_files:
             os.remove("{0}/{1}".format(path, file))
+
+def DivideAndFeedSets(source_path, train_path, test_path, image_dir, mask_dir, train_to_test_ratio, sample_count = 0):
+    png_files = list(filter(lambda x: x.endswith(".png") and not "MM" in x, os.listdir(source_path)))
+    train_set_count = round(len(png_files)*train_to_test_ratio)
+    test_set_count = len(png_files) - train_set_count
+    random.shuffle(png_files)
+    train_set = png_files[:train_set_count]
+    train_set = train_set[:sample_count] if sample_count > 0 else train_set
+    test_set = png_files[test_set_count:]
+    test_set = test_set[:sample_count] if sample_count > 0 else test_set
+    for train_sample in train_set:
+        image_filename = train_sample
+        mask_filename = list(filter(lambda x: x.startswith(image_filename) and "MM" in x and x.endswith(".png"), os.listdir(source_path)))
+        copyfile("{0}/{1}".format(source_path, image_filename), "{0}/{1}/{2}".format(train_path, image_dir, image_filename))
+        copyfile("{0}/{1}".format(source_path, mask_filename), "{0}/{1}/{2}".format(train_path, mask_dir, mask_filename))
+    for test_sample in test_set:
+        image_filename = test_sample
+        mask_filename = list(filter(lambda x: x.startswith(image_filename) and "MM" in x and x.endswith(".png"), os.listdir(source_path)))
+        copyfile("{0}/{1}".format(source_path, image_filename), "{0}/{1}/{2}".format(test_path, image_dir, image_filename))
+        copyfile("{0}/{1}".format(source_path, mask_filename), "{0}/{1}/{2}".format(test_path, mask_dir, mask_filename))
