@@ -18,13 +18,14 @@ def ExecuteWithLogs(func_desc, log_file_path, func_to_measure):
         log_file.write("{0} ended at {1} and lasted {2}h {3}m {4}s.\n".format(func_desc, end_datetime, hours, minutes, seconds))
     return result
 
-def LogParameters(log_file_path, target_size, epoch_count, sample_count,
+def LogParameters(log_file_path, target_size, epoch_count, sample_count, train_to_test_ratio,
                   batch_size, steps, bit_depth, threshold, aug_parameters):
     with open(log_file_path, 'a') as log_file:
         log_file.write("MODEL:\n")
         log_file.write("target size: {0}x{1}\n".format(target_size[0], target_size[1]))
         log_file.write("epoch count: {0}\n".format(epoch_count))
         log_file.write("sample count: {0}\n".format(sample_count))
+        log_file.write("train to test ratio: {0}\n".format(train_to_test_ratio))
         log_file.write("batch size: {0}\n".format(batch_size))
         log_file.write("steps: {0}\n".format(steps))
         log_file.write("bit depth: {0}\n".format(bit_depth))

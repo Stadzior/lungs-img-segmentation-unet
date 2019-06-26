@@ -7,7 +7,8 @@ from customCallbacks import AccuracyAndLossCallback
 
 TARGET_SIZE = (512, 512)
 EPOCH_COUNT = 2
-SAMPLE_COUNT = 400
+SAMPLE_COUNT = 500
+TRAIN_TO_TEST_RATIO = 0.8
 BATCH_SIZE = 1
 SOURCE_PATH = 'data/source'
 TEST_PATH = 'data/test'
@@ -32,12 +33,12 @@ save_path = "{0}/result_{1}".format(RESULT_PATH, datetime.datetime.now().strftim
 log_file_path = "{0}/log.txt".format(save_path)
 
 ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
-DivideAndFeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, 0.8, SAMPLE_COUNT)
+DivideAndFeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT)
 
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 
-LogParameters(log_file_path, TARGET_SIZE, EPOCH_COUNT, SAMPLE_COUNT,
+LogParameters(log_file_path, TARGET_SIZE, EPOCH_COUNT, SAMPLE_COUNT, TRAIN_TO_TEST_RATIO,
                   BATCH_SIZE, STEPS, BIT_DEPTH, THRESHOLD, AUG_PARAMETERS)
 
 tensorboardServer = TensorboardHelper(save_path)
@@ -53,7 +54,7 @@ ExecuteWithLogs("Training", log_file_path, lambda _ = None: model.fit_generator(
 
 #Executing testing with timestamps and measurements
 testGenerator = CreateTestGenerator(TEST_PATH, TARGET_SIZE, MAX_VALUE)
-result = ExecuteWithLogs("Testing", log_file_path, lambda _ = None: (model.predict_generator(testGenerator, STEPS, verbose = 1)))png_filesg result saving with timestamps and measurements
+result = ExecuteWithLogs("Testing", log_file_path, lambda _ = None: (model.predict_generator(testGenerator, STEPS, verbose = 1)))
 ExecuteWithLogs("Saving results", log_file_path, lambda _ = None: 
     SaveResult(TEST_PATH, save_path, result, THRESHOLD))
 
