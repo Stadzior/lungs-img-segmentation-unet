@@ -6,7 +6,7 @@ from tensorflow.python.keras.callbacks import TensorBoard
 from customCallbacks import AccuracyAndLossCallback
 
 TARGET_SIZE = (512, 512)
-EPOCH_COUNT = 2
+EPOCH_COUNT = 1
 SAMPLE_COUNT = 10
 TRAIN_TO_TEST_RATIO = 0.8
 BATCH_SIZE = 1
@@ -21,6 +21,7 @@ BIT_DEPTH = 8
 MAX_VALUE = math.pow(2, BIT_DEPTH)-1
 THRESHOLD = 0.5
 AUG_DIR = 'aug'
+AUG_COUNT = 50
 AUG_PARAMETERS = dict(rotation_range=0.2,
                     width_shift_range=0.05,
                     height_shift_range=0.05,
@@ -28,12 +29,13 @@ AUG_PARAMETERS = dict(rotation_range=0.2,
                     zoom_range=0.05,
                     horizontal_flip=True,
                     fill_mode='nearest')
+AUG_ENABLED = True
    
 save_path = "{0}/result_{1}".format(RESULT_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
 log_file_path = "{0}/log.txt".format(save_path)
 
-ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
-DivideAndFeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT)
+# ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
+# DivideAndFeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT)
 
 if not os.path.exists(save_path):
     os.makedirs(save_path)
@@ -48,11 +50,15 @@ tensorboardCallback = TensorBoard(save_path)
 accuracyAndLossCallback = AccuracyAndLossCallback()
 model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
 
+steps_per_epoch = round(SAMPLE_COUNT * TRAIN_TO_TEST_RATIO)
 #Executing training with timestamps and measurements
-#trainGenerator = CreateTrainGeneratorWithAugmentation(TRAIN_PATH, BATCH_SIZE, TARGET_SIZE, IMAGE_DIR, MASK_DIR, AUG_DIR, AUG_PARAMETERS, MAX_VALUE, THRESHOLD)
-trainGenerator = CreateTrainGenerator(TRAIN_PATH, IMAGE_DIR, MASK_DIR, MAX_VALUE, THRESHOLD)
+if (AUG_ENABLED):
+    steps_per_epoch = steps_per_epoch * AUG_COUNT
+    trainGenerator = CreateTrainGeneratorWithAugmentation(TRAIN_PATH, BATCH_SIZE, TARGET_SIZE, IMAGE_DIR, MASK_DIR, AUG_DIR, AUG_PARAMETERS, MAX_VALUE, THRESHOLD)
+else:
+    trainGenerator = CreateTrainGenerator(TRAIN_PATH, IMAGE_DIR, MASK_DIR, MAX_VALUE, THRESHOLD)
 
-ExecuteWithLogs("Training", log_file_path, lambda _ = None: model.fit_generator(trainGenerator, SAMPLE_COUNT, EPOCH_COUNT, callbacks = [tensorboardCallback, accuracyAndLossCallback]))   
+ExecuteWithLogs("Training", log_file_path, lambda _ = None: model.fit_generator(trainGenerator, steps_per_epoch, EPOCH_COUNT, callbacks = [tensorboardCallback, accuracyAndLossCallback]))   
 
 #Executing testing with timestamps and measurements
 testGenerator = CreateTestGenerator(TEST_PATH, TARGET_SIZE, MAX_VALUE)
@@ -62,4 +68,4 @@ ExecuteWithLogs("Saving results", log_file_path, lambda _ = None:
 
 LogAccuracyAndLoss(log_file_path, accuracyAndLossCallback.accuracy, accuracyAndLossCallback.loss)
 
-input("You can now go to Tensorboard url and look into the statistics.\n To end session and kill Tensorboard instance press any key...")
+input("You can now go to Tensorboard url and look into the statistics.\n To end session and kill Tensorboard instance input any key...")

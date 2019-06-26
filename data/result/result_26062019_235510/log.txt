@@ -1,0 +1,18 @@
+MODEL:
+target size: 512x512
+epoch count: 1
+sample count: 10
+train to test ratio: 0.8
+batch size: 2
+steps: 3
+bit depth: 8
+threshold: 0.5
+AUGMENTATION:
+rotation range: 0.2
+width shift range: 0.05
+height shift range: 0.05
+shear range: 0.05
+zoom range: 0.05
+horizontal flip: True
+fill mode: nearest
+Training started at 26-06-2019, 23:55:12.
