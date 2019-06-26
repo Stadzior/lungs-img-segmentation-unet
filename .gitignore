@@ -110,5 +110,7 @@ venv.bak/
 *.mhd
 *.raw
 *.npy
+*.png
+
 data/train/aug
 data/test/result*/
