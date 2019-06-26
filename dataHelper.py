@@ -49,22 +49,24 @@ def CreateTrainGeneratorWithAugmentation(train_path, batch_size, target_size, im
 
 def CreateTrainGenerator(train_path, image_dir, mask_dir, max_value, threshold):
     #data augmentation    
-    image_filenames = list(filter(lambda x: x.endswith(".png"), os.listdir("{0}/{1}".format(train_path, image_dir))))
-    mask_filenames = list(filter(lambda x: x.endswith(".png"), os.listdir("{0}/{1}".format(train_path, mask_dir))))
+    image_path = "{0}/{1}".format(train_path, image_dir)
+    mask_path = "{0}/{1}".format(train_path, mask_dir)
+    image_filenames = list(filter(lambda x: x.endswith(".png"), os.listdir(image_path)))
+    mask_filenames = list(filter(lambda x: x.endswith(".png"), os.listdir(mask_path)))
     train_set_filenames = zip(image_filenames, mask_filenames)
     for (img_filename, mask_filename) in train_set_filenames:
 
-        img = Image.open(img_filename, mode='r')
+        img = Image.open("{0}/{1}".format(image_path, img_filename), mode='r')
         img_array = np.asarray(img)
-        img = ExtendToFourDims(img)
+        img = ExtendToFourDims(img_array)
         img = img / max_value
         
-        mask = Image.open(mask_filename, mode='r')
+        mask = Image.open("{0}/{1}".format(mask_path, mask_filename), mode='r')
         mask_array = np.asarray(mask)
-        mask = ExtendToFourDims(mask)
+        mask = ExtendToFourDims(mask_array)
         mask = mask / max_value
         mask = ThresholdImage(mask / max_value, threshold)      
-          
+
         yield (img, mask)
 
 def CreateTestGenerator(test_path, target_size, max_value):
