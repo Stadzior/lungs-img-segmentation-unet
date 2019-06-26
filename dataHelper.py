@@ -60,3 +60,9 @@ def SaveResult(test_path, save_path, result, threshold):
     for i, img in enumerate(result):
         img = ThresholdImage(img[:,:,0], threshold)
         io.imsave("{0}/{1}".format(save_path, img_filenames[i]), img)
+
+def ClearSets(train_path, test_path, image_dir, mask_dir, aug_dir):
+    for path in [test_path, "{0}/{1}".format(train_path, image_dir), "{0}/{1}".format(train_path, mask_dir), "{0}/{1}".format(train_path, aug_dir)]: 
+        pngFiles = list(filter(lambda x: x.endswith(".png"), os.listdir(path)))
+        for file in pngFiles:
+            os.remove("{0}/{1}".format(path, file))

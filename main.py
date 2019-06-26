@@ -9,8 +9,10 @@ TARGET_SIZE = (512, 512)
 EPOCH_COUNT = 2
 SAMPLE_COUNT = 400
 BATCH_SIZE = 1
-TRAIN_PATH = 'data/train'
+SOURCE_PATH = 'data/source'
 TEST_PATH = 'data/test'
+TRAIN_PATH = 'data/train'
+RESULT_PATH = 'data/result'
 IMAGE_DIR = 'image'
 MASK_DIR = 'mask'
 AUG_DIR = 'aug'
@@ -26,8 +28,10 @@ AUG_PARAMETERS = dict(rotation_range=0.2,
                     horizontal_flip=True,
                     fill_mode='nearest')
    
-save_path = "{0}/result_{1}".format(TEST_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
+save_path = "{0}/result_{1}".format(RESULT_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
 log_file_path = "{0}/log.txt".format(save_path)
+
+ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
 
 if not os.path.exists(save_path):
     os.makedirs(save_path)
