@@ -89,26 +89,23 @@ def ClearSets(train_path, test_path, image_dir, mask_dir, aug_dir):
         for file in png_files:
             os.remove("{0}/{1}".format(path, file))
 
-def DivideAndFeedSets(source_path, train_path, test_path, image_dir, mask_dir, train_to_test_ratio, sample_count = 0):
+def DivideAndFeedSets(source_path, train_path, test_path, image_dir, mask_dir, train_to_test_ratio, sample_count = 0, omit_empty_imgs = True):
     image_source_path = "{0}/{1}".format(source_path, image_dir)
     mask_source_path = "{0}/{1}".format(source_path, mask_dir)
     png_files = list(filter(lambda x: x.endswith(".png"), os.listdir(image_source_path)))  
     random.shuffle(png_files)
     sample_count = sample_count if sample_count > 0 else len(png_files)
-    train_set_count = round(sample_count * train_to_test_ratio)
-    test_set_count = sample_count - train_set_count
-    train_set = png_files[:train_set_count]
-    test_set = png_files[-test_set_count:]
+    train_set, test_set = GetSets(png_files, mask_source_path, sample_count, train_to_test_ratio, omit_empty_imgs)
     print("Copying from source to train dir")
     for i, image_filename in enumerate(train_set):
-        print ("{0}/{1}".format(i, train_set_count))
-        mask_filename = list(filter(lambda x: x.replace("_Delmon_CompleteMM", "").startswith(image_filename) and x.endswith(".png"), os.listdir(mask_source_path)))[0]
+        print("{0}/{1}".format(i+1, len(train_set)))
+        mask_filename = GetMaskFileName(image_filename, mask_source_path)
         copyfile("{0}/{1}".format(image_source_path, image_filename), "{0}/{1}/{2}".format(train_path, image_dir, image_filename))
         copyfile("{0}/{1}".format(mask_source_path, mask_filename), "{0}/{1}/{2}".format(train_path, mask_dir, mask_filename))    
     print("Copying from source to test dir")
     for i, image_filename in enumerate(test_set):        
-        print ("{0}/{1}".format(i, test_set_count))
-        mask_filename = list(filter(lambda x: x.replace("_Delmon_CompleteMM", "").startswith(image_filename) and x.endswith(".png"), os.listdir(mask_source_path)))[0]
+        print("{0}/{1}".format(i+1, len(test_set)))
+        mask_filename = GetMaskFileName(image_filename, mask_source_path)
         copyfile("{0}/{1}".format(image_source_path, image_filename), "{0}/{1}".format(test_path, image_filename))
         copyfile("{0}/{1}".format(mask_source_path, mask_filename), "{0}/{1}".format(test_path, mask_filename))
 
@@ -116,3 +113,44 @@ def ExtendToFourDims(img):
     img = np.reshape(img, img.shape+(1,))
     img = np.reshape(img, (1,)+img.shape)
     return img
+
+def IsEmptyImage(img_path):
+    img = Image.open(img_path)
+    return img.convert("L").getextrema()[1] == 0
+
+def GetMaskFileName(image_filename, mask_source_path):
+    return list(filter(lambda x: x.replace("_Delmon_CompleteMM", "").startswith(image_filename) and x.endswith(".png"), os.listdir(mask_source_path)))[0]
+
+def GetSets(png_files, mask_source_path, sample_count, train_to_test_ratio, omit_empty_imgs):
+    train_set_count = round(sample_count * train_to_test_ratio)
+    test_set_count = sample_count - train_set_count
+    train_set = []
+    test_set = []
+    if (omit_empty_imgs):            
+        i = 0
+        while i < len(png_files) and len(train_set) < train_set_count:
+            image_filename = png_files[i]
+            if not IsEmptyImage("{0}/{1}".format(mask_source_path, GetMaskFileName(image_filename, mask_source_path))):
+                train_set.append(image_filename)
+            i+=1        
+        if (i >= len(png_files)):
+            train_set, test_set = GetSetsWithSamplesDistributedByRatio(train_set, test_set, train_to_test_ratio)
+        else:
+            while i < len(png_files) and len(test_set) < test_set_count:
+                image_filename = png_files[i]
+                if not IsEmptyImage("{0}/{1}".format(mask_source_path, GetMaskFileName(image_filename, mask_source_path))):
+                    test_set.append(image_filename)
+                i+=1
+            if (i >= len(png_files)):
+                train_set, test_set = GetSetsWithSamplesDistributedByRatio(train_set, test_set, train_to_test_ratio)
+    else:
+        train_set = png_files[:train_set_count]
+        test_set = png_files[train_set_count:train_set_count+train_set_count]
+    return train_set, test_set
+        
+def GetSetsWithSamplesDistributedByRatio(train_set, test_set, train_to_test_ratio):
+    samples = train_set+test_set
+    train_set_count = round(len(samples) * train_to_test_ratio)
+    test_set_count = len(samples) - train_set_count
+    train_set = samples[:train_set_count]
+    test_set = samples[train_set_count:train_set_count+train_set_count]

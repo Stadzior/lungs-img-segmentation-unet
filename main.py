@@ -6,8 +6,9 @@ from tensorflow.python.keras.callbacks import TensorBoard
 from customCallbacks import AccuracyAndLossCallback
 
 TARGET_SIZE = (512, 512)
-EPOCH_COUNT = 1
-SAMPLE_COUNT = 10
+EPOCH_COUNT = 2
+SAMPLE_COUNT = 100
+OMIT_EMPTY_IMGS = True
 TRAIN_TO_TEST_RATIO = 0.8
 BATCH_SIZE = 1
 SOURCE_PATH = 'data/source'
@@ -34,8 +35,8 @@ AUG_ENABLED = True
 save_path = "{0}/result_{1}".format(RESULT_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
 log_file_path = "{0}/log.txt".format(save_path)
 
-# ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
-# DivideAndFeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT)
+ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
+DivideAndFeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT, OMIT_EMPTY_IMGS)
 
 if not os.path.exists(save_path):
     os.makedirs(save_path)
