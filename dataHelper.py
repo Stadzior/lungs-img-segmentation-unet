@@ -6,6 +6,7 @@ import os
 import random
 from shutil import copyfile
 from PIL import Image
+from feedType import FeedType
 
 def ThresholdImage(img, threshold):    
     img[img > threshold] = 1
@@ -85,17 +86,25 @@ def SaveResult(test_path, save_path, result, threshold):
 
 def ClearSets(train_path, test_path, image_dir, mask_dir, aug_dir):
     for path in [test_path, "{0}/{1}".format(train_path, image_dir), "{0}/{1}".format(train_path, mask_dir), "{0}/{1}".format(train_path, aug_dir)]: 
-        png_files = list(filter(lambda x: x.endswith(".png"), os.listdir(path)))
-        for file in png_files:
-            os.remove("{0}/{1}".format(path, file))
+        ClearSet(path)
 
-def DivideAndFeedSets(source_path, train_path, test_path, image_dir, mask_dir, train_to_test_ratio, sample_count = 0, omit_empty_imgs = True):
+def ClearSet(path):
+    png_files = list(filter(lambda x: x.endswith(".png"), os.listdir(path)))
+    for file in png_files:
+        os.remove("{0}/{1}".format(path, file))
+
+def FeedSets(source_path, train_path, test_path, image_dir, mask_dir, feed_type, train_set_count = 0, test_set_count = 0, train_to_test_ratio = 0, sample_count = 0, omit_empty_imgs = True):
     image_source_path = "{0}/{1}".format(source_path, image_dir)
     mask_source_path = "{0}/{1}".format(source_path, mask_dir)
     png_files = list(filter(lambda x: x.endswith(".png"), os.listdir(image_source_path)))  
     random.shuffle(png_files)
     sample_count = sample_count if sample_count > 0 else len(png_files)
-    train_set, test_set = GetSets(png_files, mask_source_path, sample_count, train_to_test_ratio, omit_empty_imgs)
+    train_set = []
+    test_set = []    
+    if (feed_type == FeedType.ByRatio):
+        train_set_count = round(sample_count * train_to_test_ratio)
+        test_set_count = sample_count - train_set_count
+    train_set, test_set = GetSets(png_files, mask_source_path, test_set_count, train_set_count, omit_empty_imgs)    
     print("Copying from source to train dir")
     for i, image_filename in enumerate(train_set):
         print("{0}/{1}".format(i+1, len(train_set)))
@@ -105,9 +114,8 @@ def DivideAndFeedSets(source_path, train_path, test_path, image_dir, mask_dir, t
     print("Copying from source to test dir")
     for i, image_filename in enumerate(test_set):        
         print("{0}/{1}".format(i+1, len(test_set)))
-        mask_filename = GetMaskFileName(image_filename, mask_source_path)
         copyfile("{0}/{1}".format(image_source_path, image_filename), "{0}/{1}".format(test_path, image_filename))
-        copyfile("{0}/{1}".format(mask_source_path, mask_filename), "{0}/{1}".format(test_path, mask_filename))
+    return len(train_set), len(test_set)
 
 def ExtendToFourDims(img):
     img = np.reshape(img, img.shape+(1,))
@@ -120,10 +128,8 @@ def IsEmptyImage(img_path):
 
 def GetMaskFileName(image_filename, mask_source_path):
     return list(filter(lambda x: x.replace("_Delmon_CompleteMM", "").startswith(image_filename) and x.endswith(".png"), os.listdir(mask_source_path)))[0]
-
-def GetSets(png_files, mask_source_path, sample_count, train_to_test_ratio, omit_empty_imgs):
-    train_set_count = round(sample_count * train_to_test_ratio)
-    test_set_count = sample_count - train_set_count
+  
+def GetSets(png_files, mask_source_path, test_set_count, train_set_count, omit_empty_imgs):
     train_set = []
     test_set = []
     if (omit_empty_imgs):            
@@ -134,7 +140,7 @@ def GetSets(png_files, mask_source_path, sample_count, train_to_test_ratio, omit
                 train_set.append(image_filename)
             i+=1        
         if (i >= len(png_files)):
-            train_set, test_set = GetSetsWithSamplesDistributedByRatio(train_set, test_set, train_to_test_ratio)
+            raise IndexError()
         else:
             while i < len(png_files) and len(test_set) < test_set_count:
                 image_filename = png_files[i]
@@ -142,15 +148,8 @@ def GetSets(png_files, mask_source_path, sample_count, train_to_test_ratio, omit
                     test_set.append(image_filename)
                 i+=1
             if (i >= len(png_files)):
-                train_set, test_set = GetSetsWithSamplesDistributedByRatio(train_set, test_set, train_to_test_ratio)
+                raise IndexError()
     else:
         train_set = png_files[:train_set_count]
         test_set = png_files[train_set_count:train_set_count+train_set_count]
     return train_set, test_set
-        
-def GetSetsWithSamplesDistributedByRatio(train_set, test_set, train_to_test_ratio):
-    samples = train_set+test_set
-    train_set_count = round(len(samples) * train_to_test_ratio)
-    test_set_count = len(samples) - train_set_count
-    train_set = samples[:train_set_count]
-    test_set = samples[train_set_count:train_set_count+train_set_count]
