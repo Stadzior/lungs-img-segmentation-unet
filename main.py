@@ -4,17 +4,16 @@ from tensorboardHelper import *
 from logHelper import *
 from tensorflow.python.keras.callbacks import TensorBoard
 from customCallbacks import AccuracyAndLossCallback
-from enum import Enum
 from feedType import FeedType
 
 
 # Used by FeedType.ByRatio
-SAMPLE_COUNT = 6
+SAMPLE_COUNT = 10
 TRAIN_TO_TEST_RATIO = 0.8
 
 # Used by FeedType.ByCounts
-TRAIN_SET_COUNT = 0
-TEST_SET_COUNT = 0
+TRAIN_SET_COUNT = 8
+TEST_SET_COUNT = 2
 
 REFEED_DATA = True
 FEED_TYPE = FeedType.ByRatio
@@ -33,7 +32,7 @@ BIT_DEPTH = 8
 MAX_VALUE = math.pow(2, BIT_DEPTH)-1
 THRESHOLD = 0.5
 AUG_DIR = 'aug'
-AUG_COUNT = 10
+AUG_COUNT = 100
 AUG_PARAMETERS = dict(rotation_range=0.2,
                     width_shift_range=0.05,
                     height_shift_range=0.05,
@@ -46,9 +45,12 @@ AUG_ENABLED = True
 save_path = "{0}/result_{1}".format(RESULT_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
 log_file_path = "{0}/log.txt".format(save_path)
 
+#PrintImagesWithoutMasks('data/source/image', 'data/source/mask')
+#PrintMasksWithoutImages('data/source/image', 'data/source/mask')
+
 if (REFEED_DATA):
     ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
-    train_set_count, test_set_count = FeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, TRAIN_SET_COUNT, TEST_SET_COUNT, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT, OMIT_EMPTY_IMGS)
+    train_set_count, test_set_count = FeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, FEED_TYPE, TRAIN_SET_COUNT, TEST_SET_COUNT, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT, OMIT_EMPTY_IMGS)
 else:
     ClearSet("{0}/{1}".format(TRAIN_PATH, AUG_DIR))
     

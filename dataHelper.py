@@ -88,6 +88,36 @@ def ClearSets(train_path, test_path, image_dir, mask_dir, aug_dir):
     for path in [test_path, "{0}/{1}".format(train_path, image_dir), "{0}/{1}".format(train_path, mask_dir), "{0}/{1}".format(train_path, aug_dir)]: 
         ClearSet(path)
 
+def DeleteLayers(path, startIndex, endIndex):
+    png_files_to_delete = list(filter(lambda x: x.endswith(".png") and int(x[x.rfind('_')+1:-4]) > startIndex and int(x[x.rfind('_')+1:-4]) < endIndex, os.listdir(path)))
+    for file in png_files_to_delete:
+        os.remove('{0}/{1}'.format(path, file))
+
+def PrintImagesWithoutMasks(image_path, mask_path):    
+    image_files = list(filter(lambda x: x.endswith(".png"), os.listdir(image_path)))
+    images_without_masks = []
+    for i, image in enumerate(image_files):
+        try:
+            print("{0}/{1}".format(i, len(image_files)))
+            mask = GetMaskFileName(image, mask_path)
+        except IndexError:
+            images_without_masks.append(image)
+    for image in images_without_masks:
+        print(image)
+
+def PrintMasksWithoutImages(image_path, mask_path):
+    mask_files = list(filter(lambda x: x.endswith(".png"), os.listdir(mask_path)))
+    masks_without_images = []
+    for i, mask in enumerate(mask_files):
+        try:
+            print("{0}/{1}".format(i, len(mask_files)))
+            image = mask.replace("_Delmon_CompleteMM", "")
+            list(filter(lambda x: x == image, os.listdir(image_path)))[0]            
+        except IndexError:
+            masks_without_images.append(mask)
+    for mask in masks_without_images:
+        print(mask)
+
 def ClearSet(path):
     png_files = list(filter(lambda x: x.endswith(".png"), os.listdir(path)))
     for file in png_files:
