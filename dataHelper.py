@@ -123,7 +123,7 @@ def ClearSet(path):
     for file in png_files:
         os.remove("{0}/{1}".format(path, file))
 
-def FeedSets(source_path, train_path, test_path, image_dir, mask_dir, feed_type, train_set_count = 0, test_set_count = 0, train_to_test_ratio = 0, sample_count = 0, omit_empty_imgs = True):
+def FeedSets(source_path, train_path, test_path, image_dir, mask_dir, feed_type, train_set_count = 0, test_set_count = 0, train_to_test_ratio = 0, sample_count = 0):
     image_source_path = "{0}/{1}".format(source_path, image_dir)
     mask_source_path = "{0}/{1}".format(source_path, mask_dir)
     png_files = list(filter(lambda x: x.endswith(".png"), os.listdir(image_source_path)))  
@@ -134,7 +134,7 @@ def FeedSets(source_path, train_path, test_path, image_dir, mask_dir, feed_type,
     if (feed_type == FeedType.ByRatio):
         train_set_count = round(sample_count * train_to_test_ratio)
         test_set_count = sample_count - train_set_count
-    train_set, test_set = GetSets(png_files, mask_source_path, test_set_count, train_set_count, omit_empty_imgs)    
+    train_set, test_set = GetSets(png_files, train_set_count)    
     print("Copying from source to train dir")
     for i, image_filename in enumerate(train_set):
         print("{0}/{1}".format(i+1, len(train_set)))
@@ -158,28 +158,28 @@ def IsEmptyImage(img_path):
 
 def GetMaskFileName(image_filename, mask_source_path):
     return list(filter(lambda x: x.replace("_Delmon_CompleteMM", "").startswith(image_filename) and x.endswith(".png"), os.listdir(mask_source_path)))[0]
+
+def GetImageFileName(mask_filename):
+    return mask_filename.replace("_Delmon_CompleteMM", "")  
   
-def GetSets(png_files, mask_source_path, test_set_count, train_set_count, omit_empty_imgs):
-    train_set = []
-    test_set = []
-    if (omit_empty_imgs):            
-        i = 0
-        while i < len(png_files) and len(train_set) < train_set_count:
-            image_filename = png_files[i]
-            if not IsEmptyImage("{0}/{1}".format(mask_source_path, GetMaskFileName(image_filename, mask_source_path))):
-                train_set.append(image_filename)
-            i+=1        
-        if (i >= len(png_files) and len(train_set) < train_set_count):
-            raise IndexError()
-        else:
-            while i < len(png_files) and len(test_set) < test_set_count:
-                image_filename = png_files[i]
-                if not IsEmptyImage("{0}/{1}".format(mask_source_path, GetMaskFileName(image_filename, mask_source_path))):
-                    test_set.append(image_filename)
-                i+=1
-            if (i >= len(png_files) and len(test_set) < test_set_count):
-                raise IndexError()
-    else:
-        train_set = png_files[:train_set_count]
-        test_set = png_files[train_set_count:train_set_count+train_set_count]
+def GetSets(png_files, train_set_count):
+    train_set = png_files[:train_set_count]
+    test_set = png_files[train_set_count:train_set_count+train_set_count]
     return train_set, test_set
+
+def DeleteEmptyImgs(source_path, image_dir, mask_dir):
+    print("Remove empty imgs started:")
+    image_source_path = "{0}/{1}".format(source_path, image_dir)
+    mask_source_path = "{0}/{1}".format(source_path, mask_dir)
+    mask_filenames = list(filter(lambda x: x.endswith(".png"), os.listdir(mask_source_path)))
+    for i,mask_filename in enumerate(mask_filenames):  
+        mask_path = "{0}/{1}".format(mask_source_path, mask_filename)     
+        if IsEmptyImage(mask_path):
+            os.remove(mask_path)
+            image_filename = GetImageFileName(mask_filename)
+            image_path = "{0}/{1}".format(image_source_path, image_filename)    
+            os.remove(image_path)            
+            print("{0}/{1} {2} REMOVED".format(i+1, len(mask_filenames), mask_filename))
+        print("{0}/{1} {2}".format(i+1, len(mask_filenames), mask_filename))
+
+            

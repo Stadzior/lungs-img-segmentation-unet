@@ -16,7 +16,7 @@ PRETRAINED_WEIGHTS_FILENAME_LOAD = 'best_checkpoint_load.hdf5'
 # Feeding mode etc.
 REFEED_DATA = True
 FEED_TYPE = FeedType.ByRatio
-OMIT_EMPTY_IMGS = True
+DELETE_EMPTY_IMGS = True
 
 # Used by FeedType.ByRatio
 SAMPLE_COUNT = 0 # Sth less than 1 to use whatever was copied into train/test dirs
@@ -56,9 +56,12 @@ log_file_path = "{0}/log.txt".format(save_path)
 #PrintImagesWithoutMasks('data/source/image', 'data/source/mask')
 #PrintMasksWithoutImages('data/source/image', 'data/source/mask')
 
+if (DELETE_EMPTY_IMGS):
+    DeleteEmptyImgs(SOURCE_PATH, IMAGE_DIR, MASK_DIR)
+
 if (REFEED_DATA):
     ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
-    train_set_count, test_set_count = FeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, FEED_TYPE, TRAIN_SET_COUNT, TEST_SET_COUNT, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT, OMIT_EMPTY_IMGS)
+    train_set_count, test_set_count = FeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, FEED_TYPE, TRAIN_SET_COUNT, TEST_SET_COUNT, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT)
 else:
     ClearSet("{0}/{1}".format(TRAIN_PATH, AUG_DIR))
     
