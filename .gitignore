@@ -103,14 +103,16 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-#vscode
+# vscode
 .vscode
 
-#datafiles
+# datafiles
 *.mhd
 *.raw
 *.npy
 *.png
+# pretrained weights files
+*.hdf5
 
 data/train/aug
 data/test/result/

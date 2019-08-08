@@ -169,7 +169,7 @@ def GetSets(png_files, mask_source_path, test_set_count, train_set_count, omit_e
             if not IsEmptyImage("{0}/{1}".format(mask_source_path, GetMaskFileName(image_filename, mask_source_path))):
                 train_set.append(image_filename)
             i+=1        
-        if (i >= len(png_files)):
+        if (i >= len(png_files) and len(train_set) < train_set_count):
             raise IndexError()
         else:
             while i < len(png_files) and len(test_set) < test_set_count:
@@ -177,7 +177,7 @@ def GetSets(png_files, mask_source_path, test_set_count, train_set_count, omit_e
                 if not IsEmptyImage("{0}/{1}".format(mask_source_path, GetMaskFileName(image_filename, mask_source_path))):
                     test_set.append(image_filename)
                 i+=1
-            if (i >= len(png_files)):
+            if (i >= len(png_files) and len(test_set) < test_set_count):
                 raise IndexError()
     else:
         train_set = png_files[:train_set_count]
