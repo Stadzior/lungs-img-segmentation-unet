@@ -2,6 +2,7 @@ from model import *
 from dataHelper import *    
 from tensorboardHelper import *
 from logHelper import *
+from filterVisualizationHelper import visualize_layer
 from tensorflow.python.keras.callbacks import TensorBoard
 from customCallbacks import AccuracyAndLossCallback
 from feedType import FeedType
@@ -9,17 +10,17 @@ from keras.callbacks import ModelCheckpoint
 import os
 
 # Use pretrained weights or perform training
-USE_PRETRAINED_WEIGHTS = False
+USE_PRETRAINED_WEIGHTS = True
 PRETRAINED_WEIGHTS_FILENAME_SAVE = 'best_checkpoint_save.hdf5'
 PRETRAINED_WEIGHTS_FILENAME_LOAD = 'best_checkpoint_load.hdf5'
 
 # Feeding mode etc.
-REFEED_DATA = True
+REFEED_DATA = False
 FEED_TYPE = FeedType.ByRatio
-DELETE_EMPTY_IMGS = True
+DELETE_EMPTY_IMGS = False
 
 # Used by FeedType.ByRatio
-SAMPLE_COUNT = 0 # Sth less than 1 to use whatever was copied into train/test dirs
+SAMPLE_COUNT = 20 # Sth less than 1 to use whatever was copied into train/test dirs
 TRAIN_TO_TEST_RATIO = 0.8
 
 # Used by FeedType.ByCounts
@@ -39,9 +40,9 @@ BIT_DEPTH = 8
 MAX_VALUE = math.pow(2, BIT_DEPTH)-1
 THRESHOLD = 0.5
 
-AUG_ENABLED = False
+AUG_ENABLED = True
 AUG_DIR = 'aug'
-AUG_COUNT = 100
+AUG_COUNT = 300
 AUG_PARAMETERS = dict(rotation_range=0.2,
                     width_shift_range=0.05,
                     height_shift_range=0.05,
@@ -64,12 +65,14 @@ if (REFEED_DATA):
     train_set_count, test_set_count = FeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, FEED_TYPE, TRAIN_SET_COUNT, TEST_SET_COUNT, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT)
 else:
     ClearSet("{0}/{1}".format(TRAIN_PATH, AUG_DIR))
+    train_set_count = len(list(filter(lambda x: x.endswith(".png"), os.listdir("{0}/{1}".format(TRAIN_PATH, IMAGE_DIR)))))
+    test_set_count = len(list(filter(lambda x: x.endswith(".png"), os.listdir("{0}".format(TEST_PATH)))))
     
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 
 LogParameters(log_file_path, TARGET_SIZE, EPOCH_COUNT, SAMPLE_COUNT, train_set_count,
-                  BATCH_SIZE, test_set_count, BIT_DEPTH, THRESHOLD, AUG_PARAMETERS)
+                  test_set_count, BATCH_SIZE, BIT_DEPTH, THRESHOLD, AUG_PARAMETERS)
 
 model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
 if USE_PRETRAINED_WEIGHTS:
@@ -94,12 +97,13 @@ else:
 
     ExecuteWithLogs("Training", log_file_path, lambda _ = None: model.fit_generator(trainGenerator, steps_per_epoch, EPOCH_COUNT, callbacks = [tensorboardCallback, accuracyAndLossCallback, checkpointCallback]))   
     LogAccuracyAndLoss(log_file_path, accuracyAndLossCallback.accuracy, accuracyAndLossCallback.loss)
+    os.remove(PRETRAINED_WEIGHTS_FILENAME_LOAD)
     os.rename(PRETRAINED_WEIGHTS_FILENAME_SAVE, PRETRAINED_WEIGHTS_FILENAME_LOAD)
 
 # Executing testing with timestamps and measurements
 testGenerator = CreateTestGenerator(TEST_PATH, TARGET_SIZE, MAX_VALUE)
 result = ExecuteWithLogs("Testing", log_file_path, lambda _ = None: (model.predict_generator(testGenerator, test_set_count, verbose = 1)))
-ExecuteWithLogs("Saving results", log_file_path, lambda _ = None: 
-    SaveResult(TEST_PATH, save_path, result, THRESHOLD))
+ExecuteWithLogs("Saving results", log_file_path, lambda _ = None: SaveResult(TEST_PATH, save_path, result, THRESHOLD))
+ExecuteWithLogs("Visualizing filters", log_file_path, lambda _ = None: visualize_layer(model, "conv1"))
 
 input("You can now go to Tensorboard url and look into the statistics (if training was performed).\nTo end session and kill Tensorboard instance input any key...")
