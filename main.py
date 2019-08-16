@@ -15,12 +15,13 @@ PRETRAINED_WEIGHTS_FILENAME_SAVE = 'best_checkpoint_save.hdf5'
 PRETRAINED_WEIGHTS_FILENAME_LOAD = 'best_checkpoint_load.hdf5'
 
 # Feeding mode etc.
-REFEED_DATA = False
-FEED_TYPE = FeedType.ByRatio
+REFEED_DATA = True
+FEED_TYPE = FeedType.ByRatioPerRaw
+PER_RAW = True # Determines if division should be based per image or per raw file
 DELETE_EMPTY_IMGS = False
 
 # Used by FeedType.ByRatio
-SAMPLE_COUNT = 20 # Sth less than 1 to use whatever was copied into train/test dirs
+SAMPLE_COUNT = 0 # Sth less than 1 to use whatever was copied into train/test dirs
 TRAIN_TO_TEST_RATIO = 0.8
 
 # Used by FeedType.ByCounts
@@ -40,7 +41,7 @@ BIT_DEPTH = 8
 MAX_VALUE = math.pow(2, BIT_DEPTH)-1
 THRESHOLD = 0.5
 
-AUG_ENABLED = True
+AUG_ENABLED = False    
 AUG_DIR = 'aug'
 AUG_COUNT = 300
 AUG_PARAMETERS = dict(rotation_range=0.2,
@@ -64,7 +65,7 @@ if (DELETE_EMPTY_IMGS):
 
 if (REFEED_DATA):
     ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
-    train_set_count, test_set_count = FeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, FEED_TYPE, TRAIN_SET_COUNT, TEST_SET_COUNT, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT)
+    train_set_count, test_set_count = FeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, FEED_TYPE, TRAIN_SET_COUNT, TEST_SET_COUNT, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT, PER_RAW)
 else:
     ClearSet("{0}/{1}".format(TRAIN_PATH, AUG_DIR))
     train_set_count = len(list(filter(lambda x: x.endswith(".png"), os.listdir("{0}/{1}".format(TRAIN_PATH, IMAGE_DIR)))))

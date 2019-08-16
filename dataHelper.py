@@ -7,6 +7,7 @@ import random
 from shutil import copyfile
 from PIL import Image
 from feedType import FeedType
+from transparencyLevel import TransparencyLevel
 
 def ThresholdImage(img, threshold):    
     img[img > threshold] = 1
@@ -123,18 +124,12 @@ def ClearSet(path):
     for file in png_files:
         os.remove("{0}/{1}".format(path, file))
 
-def FeedSets(source_path, train_path, test_path, image_dir, mask_dir, feed_type, train_set_count = 0, test_set_count = 0, train_to_test_ratio = 0, sample_count = 0):
+def FeedSets(source_path, train_path, test_path, image_dir, mask_dir, feed_type, train_set_count = 0, test_set_count = 0, train_to_test_ratio = 0, sample_count = 0, per_raw = True):
     image_source_path = "{0}/{1}".format(source_path, image_dir)
     mask_source_path = "{0}/{1}".format(source_path, mask_dir)
     png_files = list(filter(lambda x: x.endswith(".png"), os.listdir(image_source_path)))  
-    random.shuffle(png_files)
-    sample_count = sample_count if sample_count > 0 else len(png_files)
-    train_set = []
-    test_set = []    
-    if (feed_type == FeedType.ByRatio):
-        train_set_count = round(sample_count * train_to_test_ratio)
-        test_set_count = sample_count - train_set_count
-    train_set, test_set = GetSets(png_files, train_set_count)    
+    train_set, test_set = GetSets(png_files, feed_type, sample_count, train_to_test_ratio,
+                                  train_set_count, test_set_count, per_raw)    
     print("Copying from source to train dir")
     for i, image_filename in enumerate(train_set):
         print("{0}/{1}".format(i+1, len(train_set)))
@@ -162,9 +157,52 @@ def GetMaskFileName(image_filename, mask_source_path):
 def GetImageFileName(mask_filename):
     return mask_filename.replace("_Delmon_CompleteMM", "")  
   
-def GetSets(png_files, train_set_count):
-    train_set = png_files[:train_set_count]
-    test_set = png_files[train_set_count:train_set_count+train_set_count]
+def GetSets(png_files, feed_type, sample_count, train_to_test_ratio, train_set_count, test_set_count, per_raw): 
+    sample_count_specified = sample_count > 0
+    sample_count = sample_count if sample_count_specified else len(GetRawFileNames()) if per_raw else len(png_files)    
+    if (feed_type == FeedType.ByRatio):
+        train_set_count = round(sample_count * train_to_test_ratio)
+        test_set_count = sample_count - train_set_count
+    if (per_raw):
+        low_raw_files, medium_raw_files, high_raw_files = (GetRawFileNamesByTransparencyLevel(TransparencyLevel.Low),
+                                                GetRawFileNamesByTransparencyLevel(TransparencyLevel.Medium),
+                                                GetRawFileNamesByTransparencyLevel(TransparencyLevel.High))
+        random.shuffle(low_raw_files)
+        random.shuffle(medium_raw_files)
+        random.shuffle(high_raw_files)
+
+        if (feed_type == FeedType.ByCount or sample_count_specified):
+            train_low_raw_files = low_raw_files[:round(train_set_count / 3)]             
+            train_medium_raw_files = medium_raw_files[:round(train_set_count / 3)]     
+            train_high_raw_files = high_raw_files[:train_set_count - len(train_low_raw_files) - len(train_medium_raw_files)]
+            test_low_raw_files = low_raw_files[len(train_low_raw_files):len(train_low_raw_files) + round(test_set_count / 3)]             
+            test_medium_raw_files = medium_raw_files[len(train_medium_raw_files):len(train_medium_raw_files) + round(test_set_count / 3)]     
+            test_high_raw_files = high_raw_files[len(train_high_raw_files):len(train_high_raw_files) + test_set_count - len(test_low_raw_files) - len(test_medium_raw_files)]
+        else:                
+            train_low_raw_files = low_raw_files[:round(len(low_raw_files) * train_to_test_ratio)]
+            train_medium_raw_files = medium_raw_files[:round(len(medium_raw_files) * train_to_test_ratio)]
+            train_high_raw_files = high_raw_files[:round(len(high_raw_files) * train_to_test_ratio)]
+            test_low_raw_files = low_raw_files[len(train_low_raw_files):]
+            test_medium_raw_files = medium_raw_files[len(train_medium_raw_files):]
+            test_high_raw_files = high_raw_files[len(train_high_raw_files):]
+        train_raw_files = train_low_raw_files + train_medium_raw_files + train_high_raw_files
+        test_raw_files = test_low_raw_files + test_medium_raw_files + test_high_raw_files
+        train_set = []
+        test_set = []
+        for png_file in png_files:
+            for train_raw_file in train_raw_files:
+                if (train_raw_file in png_file):
+                    train_set.append(png_file)
+                    break
+            if (png_file not in train_set):
+                for test_raw_file in test_raw_files:
+                    if (test_raw_file in png_file):
+                        test_set.append(png_file)
+                        break
+    else:
+        random.shuffle(png_files)
+        train_set = png_files[:train_set_count]
+        test_set = png_files[train_set_count:train_set_count+test_set_count]
     return train_set, test_set
 
 def DeleteEmptyImgs(source_path, image_dir, mask_dir):
@@ -182,4 +220,28 @@ def DeleteEmptyImgs(source_path, image_dir, mask_dir):
             print("{0}/{1} {2} REMOVED".format(i+1, len(mask_filenames), mask_filename))
         print("{0}/{1} {2}".format(i+1, len(mask_filenames), mask_filename))
 
-            
+def GetRawFileNames():
+    return ["inspi16__1.0__B31f_3", "inspi15__1.0__B31f_11", "inspi14__1.0__B31f_19",
+            "inspi13__1.0__B31f_27", "expi16__1.0__B31f_7", "expi15__1.0__B31f_15",
+            "expi14__1.0__B31f_23", "expi13__1.0__B31f_31", "expi12__1.0__B31f_35",
+            "inspi8__1.0__B31f_98", "inspi7__1.0__B31f_90", "inspi6__1.0__B31f_82",
+            "inspi5__1.0__B31f_74", "inspi4__1.0__B31f_66", "inspi3__1.0__B31f_58", 
+            "expi6__1.0__B31f_78", "expi5__1.0__B31f_70", "expi4__1.0__B31f_62",
+            "expi3__1.0__B31f_54", "expi2__1.0__B31f_46", "inspi11__1.0__B31f_1022",
+            "inspi10__1.0__B31f_1014" "inspi9__1.0__B31f_1006", "inspi1__1.0__B31f_42",
+            "expi11__1.0__B31f_1018", "expi10__1.0__B31f_1010", "expi9__1.0__B31f_1002",
+            "expi8__1.0__B31f_94" "expi7__1.0__B31f_86", "expi1__1.0__B31f_38"]
+
+def GetRawFileNamesByTransparencyLevel(transparency_level):
+    if (transparency_level == TransparencyLevel.Low):
+        return ["inspi16__1.0__B31f_3", "inspi15__1.0__B31f_11", "inspi14__1.0__B31f_19",
+                "inspi13__1.0__B31f_27", "expi16__1.0__B31f_7", "expi15__1.0__B31f_15",
+                "expi14__1.0__B31f_23", "expi13__1.0__B31f_31", "expi12__1.0__B31f_35"]
+    elif (transparency_level == TransparencyLevel.Medium):
+        return ["inspi8__1.0__B31f_98", "inspi7__1.0__B31f_90", "inspi6__1.0__B31f_82", "inspi5__1.0__B31f_74",
+                "inspi4__1.0__B31f_66", "inspi3__1.0__B31f_58", "expi6__1.0__B31f_78", "expi5__1.0__B31f_70",
+                "expi4__1.0__B31f_62", "expi3__1.0__B31f_54", "expi2__1.0__B31f_46"]
+    elif (transparency_level == TransparencyLevel.High):
+        return ["inspi11__1.0__B31f_1022", "inspi10__1.0__B31f_1014" "inspi9__1.0__B31f_1006",
+                "inspi1__1.0__B31f_42", "expi11__1.0__B31f_1018", "expi10__1.0__B31f_1010",
+                "expi9__1.0__B31f_1002", "expi8__1.0__B31f_94" "expi7__1.0__B31f_86", "expi1__1.0__B31f_38"]
