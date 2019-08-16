@@ -10,15 +10,16 @@ from keras.callbacks import ModelCheckpoint
 import os
 
 # Use pretrained weights or perform training
-USE_PRETRAINED_WEIGHTS = True
+USE_PRETRAINED_WEIGHTS = False
 PRETRAINED_WEIGHTS_FILENAME_SAVE = 'best_checkpoint_save.hdf5'
 PRETRAINED_WEIGHTS_FILENAME_LOAD = 'best_checkpoint_load.hdf5'
 
 # Feeding mode etc.
 REFEED_DATA = True
-FEED_TYPE = FeedType.ByRatioPerRaw
+FEED_TYPE = FeedType.ByRatio
 PER_RAW = True # Determines if division should be based per image or per raw file
-DELETE_EMPTY_IMGS = False
+DELETE_EMPTY_IMGS = False # It deletes empties from source directory!
+IMG_LAYER_RANGE = (250,300) # Defines range of layers that should be used when refeeding data.
 
 # Used by FeedType.ByRatio
 SAMPLE_COUNT = 0 # Sth less than 1 to use whatever was copied into train/test dirs
@@ -29,7 +30,7 @@ TRAIN_SET_COUNT = 8
 TEST_SET_COUNT = 2
 
 TARGET_SIZE = (512, 512)
-EPOCH_COUNT = 2
+EPOCH_COUNT = 1
 BATCH_SIZE = 1
 SOURCE_PATH = 'data/source'
 TEST_PATH = 'data/test'
@@ -55,7 +56,7 @@ AUG_PARAMETERS = dict(rotation_range=0.2,
 save_path = "{0}/result_{1}".format(RESULT_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
 log_file_path = "{0}/log.txt".format(save_path)
 
-VISUALIZE_CONV_FILTERS = True
+VISUALIZE_CONV_FILTERS = False
 
 #PrintImagesWithoutMasks('data/source/image', 'data/source/mask')
 #PrintMasksWithoutImages('data/source/image', 'data/source/mask')
@@ -65,7 +66,7 @@ if (DELETE_EMPTY_IMGS):
 
 if (REFEED_DATA):
     ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
-    train_set_count, test_set_count = FeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, FEED_TYPE, TRAIN_SET_COUNT, TEST_SET_COUNT, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT, PER_RAW)
+    train_set_count, test_set_count = FeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, FEED_TYPE, TRAIN_SET_COUNT, TEST_SET_COUNT, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT, PER_RAW, IMG_LAYER_RANGE)
 else:
     ClearSet("{0}/{1}".format(TRAIN_PATH, AUG_DIR))
     train_set_count = len(list(filter(lambda x: x.endswith(".png"), os.listdir("{0}/{1}".format(TRAIN_PATH, IMAGE_DIR)))))

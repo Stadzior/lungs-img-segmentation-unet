@@ -8,6 +8,7 @@ from shutil import copyfile
 from PIL import Image
 from feedType import FeedType
 from transparencyLevel import TransparencyLevel
+import re
 
 def ThresholdImage(img, threshold):    
     img[img > threshold] = 1
@@ -124,10 +125,12 @@ def ClearSet(path):
     for file in png_files:
         os.remove("{0}/{1}".format(path, file))
 
-def FeedSets(source_path, train_path, test_path, image_dir, mask_dir, feed_type, train_set_count = 0, test_set_count = 0, train_to_test_ratio = 0, sample_count = 0, per_raw = True):
+def FeedSets(source_path, train_path, test_path, image_dir, mask_dir, feed_type, train_set_count = 0, test_set_count = 0, train_to_test_ratio = 0, sample_count = 0, per_raw = True, img_layer_range  = (0, 468)):
     image_source_path = "{0}/{1}".format(source_path, image_dir)
     mask_source_path = "{0}/{1}".format(source_path, mask_dir)
-    png_files = list(filter(lambda x: x.endswith(".png"), os.listdir(image_source_path)))  
+    print("Working on scan layers from {0} to {1}.".format(img_layer_range[0], img_layer_range[1]))
+    extractIndexFromFileName = lambda x: (int(re.search("_[\d]+.png", x).group(0).replace("_", "").replace(".png", "")))
+    png_files = list(filter(lambda x: x.endswith(".png") and img_layer_range[0] <= extractIndexFromFileName(x) <= img_layer_range[1], os.listdir(image_source_path)))  
     train_set, test_set = GetSets(png_files, feed_type, sample_count, train_to_test_ratio,
                                   train_set_count, test_set_count, per_raw)    
     print("Copying from source to train dir")
@@ -185,6 +188,14 @@ def GetSets(png_files, feed_type, sample_count, train_to_test_ratio, train_set_c
             test_low_raw_files = low_raw_files[len(train_low_raw_files):]
             test_medium_raw_files = medium_raw_files[len(train_medium_raw_files):]
             test_high_raw_files = high_raw_files[len(train_high_raw_files):]
+        print("Train raw files: {0}".format(train_set_count))
+        print("Low transparency: {0}".format(len(train_low_raw_files)))
+        print("Medium transparency: {0}".format(len(train_medium_raw_files)))
+        print("High transparency: {0}".format(len(train_high_raw_files)))
+        print("Test raw files: {0}".format(test_set_count))
+        print("Low transparency: {0}".format(len(test_low_raw_files)))
+        print("Medium transparency: {0}".format(len(test_medium_raw_files)))
+        print("High transparency: {0}".format(len(test_high_raw_files)))
         train_raw_files = train_low_raw_files + train_medium_raw_files + train_high_raw_files
         test_raw_files = test_low_raw_files + test_medium_raw_files + test_high_raw_files
         train_set = []
@@ -228,9 +239,9 @@ def GetRawFileNames():
             "inspi5__1.0__B31f_74", "inspi4__1.0__B31f_66", "inspi3__1.0__B31f_58", 
             "expi6__1.0__B31f_78", "expi5__1.0__B31f_70", "expi4__1.0__B31f_62",
             "expi3__1.0__B31f_54", "expi2__1.0__B31f_46", "inspi11__1.0__B31f_1022",
-            "inspi10__1.0__B31f_1014" "inspi9__1.0__B31f_1006", "inspi1__1.0__B31f_42",
+            "inspi10__1.0__B31f_1014", "inspi9__1.0__B31f_1006", "inspi1__1.0__B31f_42",
             "expi11__1.0__B31f_1018", "expi10__1.0__B31f_1010", "expi9__1.0__B31f_1002",
-            "expi8__1.0__B31f_94" "expi7__1.0__B31f_86", "expi1__1.0__B31f_38"]
+            "expi8__1.0__B31f_94", "expi7__1.0__B31f_86", "expi1__1.0__B31f_38"]
 
 def GetRawFileNamesByTransparencyLevel(transparency_level):
     if (transparency_level == TransparencyLevel.Low):
@@ -242,6 +253,6 @@ def GetRawFileNamesByTransparencyLevel(transparency_level):
                 "inspi4__1.0__B31f_66", "inspi3__1.0__B31f_58", "expi6__1.0__B31f_78", "expi5__1.0__B31f_70",
                 "expi4__1.0__B31f_62", "expi3__1.0__B31f_54", "expi2__1.0__B31f_46"]
     elif (transparency_level == TransparencyLevel.High):
-        return ["inspi11__1.0__B31f_1022", "inspi10__1.0__B31f_1014" "inspi9__1.0__B31f_1006",
+        return ["inspi11__1.0__B31f_1022", "inspi10__1.0__B31f_1014", "inspi9__1.0__B31f_1006",
                 "inspi1__1.0__B31f_42", "expi11__1.0__B31f_1018", "expi10__1.0__B31f_1010",
-                "expi9__1.0__B31f_1002", "expi8__1.0__B31f_94" "expi7__1.0__B31f_86", "expi1__1.0__B31f_38"]
+                "expi9__1.0__B31f_1002", "expi8__1.0__B31f_94", "expi7__1.0__B31f_86", "expi1__1.0__B31f_38"]
