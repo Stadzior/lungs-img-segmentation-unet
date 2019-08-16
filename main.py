@@ -2,7 +2,7 @@ from model import *
 from dataHelper import *    
 from tensorboardHelper import *
 from logHelper import *
-from filterVisualizationHelper import visualize_layer
+from filterVisualizationHelper import VisualizeFilters
 from tensorflow.python.keras.callbacks import TensorBoard
 from customCallbacks import AccuracyAndLossCallback
 from feedType import FeedType
@@ -54,6 +54,8 @@ AUG_PARAMETERS = dict(rotation_range=0.2,
 save_path = "{0}/result_{1}".format(RESULT_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
 log_file_path = "{0}/log.txt".format(save_path)
 
+VISUALIZE_CONV_FILTERS = True
+
 #PrintImagesWithoutMasks('data/source/image', 'data/source/mask')
 #PrintMasksWithoutImages('data/source/image', 'data/source/mask')
 
@@ -75,6 +77,7 @@ LogParameters(log_file_path, TARGET_SIZE, EPOCH_COUNT, SAMPLE_COUNT, train_set_c
                   test_set_count, BATCH_SIZE, BIT_DEPTH, THRESHOLD, AUG_PARAMETERS)
 
 model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
+
 if USE_PRETRAINED_WEIGHTS:
     	model.load_weights(PRETRAINED_WEIGHTS_FILENAME_LOAD)
 else:
@@ -104,6 +107,8 @@ else:
 testGenerator = CreateTestGenerator(TEST_PATH, TARGET_SIZE, MAX_VALUE)
 result = ExecuteWithLogs("Testing", log_file_path, lambda _ = None: (model.predict_generator(testGenerator, test_set_count, verbose = 1)))
 ExecuteWithLogs("Saving results", log_file_path, lambda _ = None: SaveResult(TEST_PATH, save_path, result, THRESHOLD))
-ExecuteWithLogs("Visualizing filters", log_file_path, lambda _ = None: visualize_layer(model, "conv1"))
+
+if VISUALIZE_CONV_FILTERS:
+    ExecuteWithLogs("Visualizing filters", log_file_path, lambda _ = None: VisualizeFilters())
 
 input("You can now go to Tensorboard url and look into the statistics (if training was performed).\nTo end session and kill Tensorboard instance input any key...")

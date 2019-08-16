@@ -1,4 +1,8 @@
-# Source: https://keras.io/examples/conv_filter_visualization/
+"""
+#Visualization of the filters of VGG16, via gradient ascent in input space.
+This script can run on CPU in a few minutes.
+Results example: ![Visualization](http://i.imgur.com/4nj4KjN.jpg)
+"""
 from __future__ import print_function
 
 import time
@@ -8,13 +12,13 @@ from keras.preprocessing.image import save_img
 from keras import layers
 from keras.applications import vgg16
 from keras import backend as K
+from model import *
+
 
 def normalize(x):
     """utility function to normalize a tensor.
-
     # Arguments
         x: An input tensor.
-
     # Returns
         The normalized input tensor.
     """
@@ -23,10 +27,8 @@ def normalize(x):
 
 def deprocess_image(x):
     """utility function to convert a float array into a valid uint8 image.
-
     # Arguments
         x: A numpy-array representing the generated image.
-
     # Returns
         A processed numpy-array, which could be used in e.g. imshow.
     """
@@ -50,12 +52,10 @@ def deprocess_image(x):
 def process_image(x, former):
     """utility function to convert a valid uint8 image back into a float array.
        Reverses `deprocess_image`.
-
     # Arguments
         x: A numpy-array, which could be used in e.g. imshow.
         former: The former numpy-array.
                 Need to determine the former mean and variance.
-
     # Returns
         A processed numpy-array representing the generated image.
     """
@@ -70,10 +70,9 @@ def visualize_layer(model,
                     epochs=15,
                     upscaling_steps=9,
                     upscaling_factor=1.2,
-                    output_dim=(512, 512),
+                    output_dim=(412, 412),
                     filter_range=(0, None)):
     """Visualizes the most relevant filters of one conv-layer in a certain model.
-
     # Arguments
         model: The model containing layer_name.
         layer_name: The name of the layer to be visualized.
@@ -95,13 +94,11 @@ def visualize_layer(model,
                                layer_output,
                                filter_index):
         """Generates image for one particular filter.
-
         # Arguments
             input_img: The input-image Tensor.
             layer_output: The output-image Tensor.
             filter_index: The to be processed filter number.
                           Assumed to be valid.
-
         #Returns
             Either None if no image could be generated.
             or a tuple of the image (array) itself and the last loss.
@@ -150,7 +147,7 @@ def visualize_layer(model,
                 if loss_value <= K.epsilon():
                     return None
 
-            # Calulate upscaled dimension
+            # Calculate upscaled dimension
             intermediate_dim = tuple(
                 int(x / (upscaling_factor ** up)) for x in output_dim)
             # Upscale
@@ -169,7 +166,6 @@ def visualize_layer(model,
 
     def _draw_filters(filters, n=None):
         """Draw the best filters in a nxn grid.
-
         # Arguments
             filters: A List of generated images and their corresponding losses
                      for each processed filter.
@@ -235,3 +231,8 @@ def visualize_layer(model,
     print('{} filter processed.'.format(len(processed_filters)))
     # Finally draw and store the best filters to disk
     _draw_filters(processed_filters)
+
+def VisualizeFilters():    
+    model = Unet((512, 512, 3)) 
+    visualize_layer(model, 'conv1_1', output_dim=(512,512))
+    visualize_layer(model, 'conv1_2', output_dim=(512,512))
