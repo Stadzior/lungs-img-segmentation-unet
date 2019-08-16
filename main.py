@@ -19,7 +19,7 @@ REFEED_DATA = True
 FEED_TYPE = FeedType.ByRatio
 PER_RAW = True # Determines if division should be based per image or per raw file
 DELETE_EMPTY_IMGS = False # It deletes empties from source directory!
-IMG_LAYER_RANGE = (250,300) # Defines range of layers that should be used when refeeding data.
+#IMG_LAYER_RANGE = (250,300) # Defines range of layers that should be used when refeeding data.
 
 # Used by FeedType.ByRatio
 SAMPLE_COUNT = 0 # Sth less than 1 to use whatever was copied into train/test dirs
@@ -42,9 +42,9 @@ BIT_DEPTH = 8
 MAX_VALUE = math.pow(2, BIT_DEPTH)-1
 THRESHOLD = 0.5
 
-AUG_ENABLED = False    
+AUG_ENABLED = True    
 AUG_DIR = 'aug'
-AUG_COUNT = 300
+AUG_COUNT = 20
 AUG_PARAMETERS = dict(rotation_range=0.2,
                     width_shift_range=0.05,
                     height_shift_range=0.05,
@@ -64,51 +64,54 @@ VISUALIZE_CONV_FILTERS = False
 if (DELETE_EMPTY_IMGS):
     DeleteEmptyImgs(SOURCE_PATH, IMAGE_DIR, MASK_DIR)
 
-if (REFEED_DATA):
-    ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
-    train_set_count, test_set_count = FeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, FEED_TYPE, TRAIN_SET_COUNT, TEST_SET_COUNT, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT, PER_RAW, IMG_LAYER_RANGE)
-else:
-    ClearSet("{0}/{1}".format(TRAIN_PATH, AUG_DIR))
-    train_set_count = len(list(filter(lambda x: x.endswith(".png"), os.listdir("{0}/{1}".format(TRAIN_PATH, IMAGE_DIR)))))
-    test_set_count = len(list(filter(lambda x: x.endswith(".png"), os.listdir("{0}".format(TEST_PATH)))))
-    
-if not os.path.exists(save_path):
-    os.makedirs(save_path)
-
-LogParameters(log_file_path, TARGET_SIZE, EPOCH_COUNT, SAMPLE_COUNT, train_set_count,
-                  test_set_count, BATCH_SIZE, BIT_DEPTH, THRESHOLD, AUG_PARAMETERS)
-
-model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
-
-if USE_PRETRAINED_WEIGHTS:
-    	model.load_weights(PRETRAINED_WEIGHTS_FILENAME_LOAD)
-else:
-    # Starting tensorboard server
-    tensorboardServer = TensorboardHelper(save_path)
-    tensorboardServer.run()
-    
-    # Callbacks
-    tensorboardCallback = TensorBoard(save_path)
-    accuracyAndLossCallback = AccuracyAndLossCallback()
-    checkpointCallback = ModelCheckpoint(PRETRAINED_WEIGHTS_FILENAME_SAVE, monitor='loss',verbose=1, save_best_only=True)
-
-    steps_per_epoch = train_set_count
-    # Executing training with timestamps and measurements
-    if (AUG_ENABLED):
-        steps_per_epoch = steps_per_epoch * AUG_COUNT
-        trainGenerator = CreateTrainGeneratorWithAugmentation(TRAIN_PATH, BATCH_SIZE, TARGET_SIZE, IMAGE_DIR, MASK_DIR, AUG_DIR, AUG_PARAMETERS, MAX_VALUE, THRESHOLD)
+for img_layer_range in list(zip(range(0, 470, 10),range(10, 480, 10))):
+    if (REFEED_DATA):
+        ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
+        train_set_count, test_set_count = FeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, FEED_TYPE, TRAIN_SET_COUNT, TEST_SET_COUNT, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT, PER_RAW, img_layer_range)
     else:
-        trainGenerator = CreateTrainGenerator(TRAIN_PATH, IMAGE_DIR, MASK_DIR, MAX_VALUE, THRESHOLD)
+        ClearSet("{0}/{1}".format(TRAIN_PATH, AUG_DIR))
+        train_set_count = len(list(filter(lambda x: x.endswith(".png"), os.listdir("{0}/{1}".format(TRAIN_PATH, IMAGE_DIR)))))
+        test_set_count = len(list(filter(lambda x: x.endswith(".png"), os.listdir("{0}".format(TEST_PATH)))))
 
-    ExecuteWithLogs("Training", log_file_path, lambda _ = None: model.fit_generator(trainGenerator, steps_per_epoch, EPOCH_COUNT, callbacks = [tensorboardCallback, accuracyAndLossCallback, checkpointCallback]))   
-    LogAccuracyAndLoss(log_file_path, accuracyAndLossCallback.accuracy, accuracyAndLossCallback.loss)
-    os.remove(PRETRAINED_WEIGHTS_FILENAME_LOAD)
-    os.rename(PRETRAINED_WEIGHTS_FILENAME_SAVE, PRETRAINED_WEIGHTS_FILENAME_LOAD)
+    if train_set_count <= 0 or test_set_count <= 0:
+        continue;    
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
 
-# Executing testing with timestamps and measurements
-testGenerator = CreateTestGenerator(TEST_PATH, TARGET_SIZE, MAX_VALUE)
-result = ExecuteWithLogs("Testing", log_file_path, lambda _ = None: (model.predict_generator(testGenerator, test_set_count, verbose = 1)))
-ExecuteWithLogs("Saving results", log_file_path, lambda _ = None: SaveResult(TEST_PATH, save_path, result, THRESHOLD))
+    LogParameters(log_file_path, TARGET_SIZE, EPOCH_COUNT, SAMPLE_COUNT, train_set_count,
+                    test_set_count, BATCH_SIZE, BIT_DEPTH, THRESHOLD, AUG_PARAMETERS)
+
+    model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
+
+    if USE_PRETRAINED_WEIGHTS:
+            model.load_weights(PRETRAINED_WEIGHTS_FILENAME_LOAD)
+    else:
+        # Starting tensorboard server
+        tensorboardServer = TensorboardHelper(save_path)
+        tensorboardServer.run()
+        
+        # Callbacks
+        tensorboardCallback = TensorBoard(save_path)
+        accuracyAndLossCallback = AccuracyAndLossCallback()
+        checkpointCallback = ModelCheckpoint(PRETRAINED_WEIGHTS_FILENAME_SAVE, monitor='loss',verbose=1, save_best_only=True)
+
+        steps_per_epoch = train_set_count
+        # Executing training with timestamps and measurements
+        if (AUG_ENABLED):
+            steps_per_epoch = steps_per_epoch * AUG_COUNT
+            trainGenerator = CreateTrainGeneratorWithAugmentation(TRAIN_PATH, BATCH_SIZE, TARGET_SIZE, IMAGE_DIR, MASK_DIR, AUG_DIR, AUG_PARAMETERS, MAX_VALUE, THRESHOLD)
+        else:
+            trainGenerator = CreateTrainGenerator(TRAIN_PATH, IMAGE_DIR, MASK_DIR, MAX_VALUE, THRESHOLD)
+
+        ExecuteWithLogs("Training", log_file_path, lambda _ = None: model.fit_generator(trainGenerator, steps_per_epoch, EPOCH_COUNT, callbacks = [tensorboardCallback, accuracyAndLossCallback, checkpointCallback]))   
+        LogAccuracyAndLoss(log_file_path, accuracyAndLossCallback.accuracy, accuracyAndLossCallback.loss)
+        os.remove(PRETRAINED_WEIGHTS_FILENAME_LOAD)
+        os.rename(PRETRAINED_WEIGHTS_FILENAME_SAVE, PRETRAINED_WEIGHTS_FILENAME_LOAD)
+
+    # Executing testing with timestamps and measurements
+    testGenerator = CreateTestGenerator(TEST_PATH, TARGET_SIZE, MAX_VALUE)
+    result = ExecuteWithLogs("Testing", log_file_path, lambda _ = None: (model.predict_generator(testGenerator, test_set_count, verbose = 1)))
+    ExecuteWithLogs("Saving results", log_file_path, lambda _ = None: SaveResult(TEST_PATH, save_path, result, THRESHOLD))
 
 if VISUALIZE_CONV_FILTERS:
     ExecuteWithLogs("Visualizing filters", log_file_path, lambda _ = None: VisualizeFilters())

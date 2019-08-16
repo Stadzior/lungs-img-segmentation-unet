@@ -1,0 +1,66 @@
+MODEL:
+target size: 512x512
+epoch count: 1
+sample count: 0
+train set count: 11
+test set count: 3
+batch size: 1
+bit depth: 8
+threshold: 0.5
+AUGMENTATION:
+rotation range: 0.2
+width shift range: 0.05
+height shift range: 0.05
+shear range: 0.05
+zoom range: 0.05
+horizontal flip: True
+fill mode: nearest
+Training started at 16-08-2019, 23:42:28.
+Training ended at 16-08-2019, 23:45:31 and lasted 0h 3m 3s.
+Accuracy: 0.9933242797851562,  Loss: 0.10759998857975006
+Testing started at 16-08-2019, 23:45:31.
+Testing ended at 16-08-2019, 23:45:32 and lasted 0h 0m 0s.
+Saving results started at 16-08-2019, 23:45:32.
+Saving results ended at 16-08-2019, 23:45:32 and lasted 0h 0m 0s.
+MODEL:
+target size: 512x512
+epoch count: 1
+sample count: 0
+train set count: 27
+test set count: 5
+batch size: 1
+bit depth: 8
+threshold: 0.5
+AUGMENTATION:
+rotation range: 0.2
+width shift range: 0.05
+height shift range: 0.05
+shear range: 0.05
+zoom range: 0.05
+horizontal flip: True
+fill mode: nearest
+Training started at 16-08-2019, 23:45:38.
+Training ended at 16-08-2019, 23:52:35 and lasted 0h 6m 57s.
+Accuracy: 0.9987602233886719,  Loss: 0.01998293586075306
+Testing started at 16-08-2019, 23:52:35.
+Testing ended at 16-08-2019, 23:52:36 and lasted 0h 0m 1s.
+Saving results started at 16-08-2019, 23:52:36.
+Saving results ended at 16-08-2019, 23:52:36 and lasted 0h 0m 0s.
+MODEL:
+target size: 512x512
+epoch count: 1
+sample count: 0
+train set count: 60
+test set count: 12
+batch size: 1
+bit depth: 8
+threshold: 0.5
+AUGMENTATION:
+rotation range: 0.2
+width shift range: 0.05
+height shift range: 0.05
+shear range: 0.05
+zoom range: 0.05
+horizontal flip: True
+fill mode: nearest
+Training started at 16-08-2019, 23:52:40.
