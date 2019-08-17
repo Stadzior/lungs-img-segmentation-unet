@@ -30,7 +30,7 @@ TRAIN_SET_COUNT = 8
 TEST_SET_COUNT = 2
 
 TARGET_SIZE = (512, 512)
-EPOCH_COUNT = 1
+EPOCH_COUNT = 2
 BATCH_SIZE = 1
 SOURCE_PATH = 'data/source'
 TEST_PATH = 'data/test'
@@ -44,7 +44,7 @@ THRESHOLD = 0.5
 
 AUG_ENABLED = True    
 AUG_DIR = 'aug'
-AUG_COUNT = 20
+AUG_COUNT = 10
 AUG_PARAMETERS = dict(rotation_range=0.2,
                     width_shift_range=0.05,
                     height_shift_range=0.05,
@@ -53,9 +53,6 @@ AUG_PARAMETERS = dict(rotation_range=0.2,
                     horizontal_flip=True,
                     fill_mode='nearest')
    
-save_path = "{0}/result_{1}".format(RESULT_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
-log_file_path = "{0}/log.txt".format(save_path)
-
 VISUALIZE_CONV_FILTERS = False
 
 #PrintImagesWithoutMasks('data/source/image', 'data/source/mask')
@@ -64,7 +61,9 @@ VISUALIZE_CONV_FILTERS = False
 if (DELETE_EMPTY_IMGS):
     DeleteEmptyImgs(SOURCE_PATH, IMAGE_DIR, MASK_DIR)
 
-for img_layer_range in list(zip(range(0, 470, 10),range(10, 480, 10))):
+for img_layer_range in list(zip(range(190, 470, 10),range(200, 480, 10))):      
+    save_path = "{0}/result_{1}".format(RESULT_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
+    log_file_path = "{0}/log.txt".format(save_path)
     if (REFEED_DATA):
         ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
         train_set_count, test_set_count = FeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, FEED_TYPE, TRAIN_SET_COUNT, TEST_SET_COUNT, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT, PER_RAW, img_layer_range)
@@ -79,7 +78,7 @@ for img_layer_range in list(zip(range(0, 470, 10),range(10, 480, 10))):
         os.makedirs(save_path)
 
     LogParameters(log_file_path, TARGET_SIZE, EPOCH_COUNT, SAMPLE_COUNT, train_set_count,
-                    test_set_count, BATCH_SIZE, BIT_DEPTH, THRESHOLD, AUG_PARAMETERS)
+                    test_set_count, BATCH_SIZE, BIT_DEPTH, THRESHOLD, AUG_COUNT, img_layer_range, AUG_PARAMETERS)
 
     model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
 

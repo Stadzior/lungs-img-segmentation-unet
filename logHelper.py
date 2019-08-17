@@ -19,7 +19,7 @@ def ExecuteWithLogs(func_desc, log_file_path, func_to_measure):
     return result
 
 def LogParameters(log_file_path, target_size, epoch_count, sample_count, train_set_count, test_set_count,
-                  batch_size, bit_depth, threshold, aug_parameters):
+                  batch_size, bit_depth, threshold, aug_count, img_layer_range, aug_parameters):
     with open(log_file_path, 'a') as log_file:
         log_file.write("MODEL:\n")
         log_file.write("target size: {0}x{1}\n".format(target_size[0], target_size[1]))
@@ -27,10 +27,12 @@ def LogParameters(log_file_path, target_size, epoch_count, sample_count, train_s
         log_file.write("sample count: {0}\n".format(sample_count))
         log_file.write("train set count: {0}\n".format(train_set_count))
         log_file.write("test set count: {0}\n".format(test_set_count))
+        log_file.write("img layer range: ({0},{1})\n".format(img_layer_range[0], img_layer_range[1]))
         log_file.write("batch size: {0}\n".format(batch_size))
         log_file.write("bit depth: {0}\n".format(bit_depth))
         log_file.write("threshold: {0}\n".format(threshold))
         log_file.write("AUGMENTATION:\n")
+        log_file.write("aug count: {0}\n".format(aug_count))
         log_file.write("rotation range: {0}\n".format(aug_parameters.get("rotation_range")))
         log_file.write("width shift range: {0}\n".format(aug_parameters.get("width_shift_range")))
         log_file.write("height shift range: {0}\n".format(aug_parameters.get("height_shift_range")))
