@@ -11,7 +11,7 @@ from keras.callbacks import ModelCheckpoint
 import os
 
 # Use pretrained weights or perform training
-USE_PRETRAINED_WEIGHTS = False
+USE_PRETRAINED_WEIGHTS = True
 PRETRAINED_WEIGHTS_LOAD_PATH = 'best_checkpoint_load.hdf5'
 
 # Feeding mode etc.
@@ -19,7 +19,6 @@ REFEED_DATA = True
 FEED_TYPE = FeedType.ByRatio
 PER_RAW = True # Determines if division should be based per image or per raw file
 DELETE_EMPTY_IMGS = False # It deletes empties from source directory!
-#IMG_LAYER_RANGE = (250,300) # Defines range of layers that should be used when refeeding data.
 
 # Used by FeedType.ByRatio
 SAMPLE_COUNT = 0 # Sth less than 1 to use whatever was copied into train/test dirs
@@ -63,7 +62,7 @@ sess = tf.Session(config=config)
 if (DELETE_EMPTY_IMGS):
     DeleteEmptyImgs(SOURCE_PATH, IMAGE_DIR, MASK_DIR)
 
-for img_layer_range in list(zip(range(360, 470, 10),range(370, 480, 10))):      
+for img_layer_range in list(zip(range(360, 380, 10), range(370, 390, 10))):      
     save_path = "{0}/result_{1}".format(RESULT_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
     pretrained_weights_save_path = '{0}/best_checkpoint_save.hdf5'.format(save_path)
     log_file_path = "{0}/log.txt".format(save_path)
