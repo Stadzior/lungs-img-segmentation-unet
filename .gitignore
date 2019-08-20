@@ -115,4 +115,4 @@ venv.bak/
 *.hdf5
 
 data/train/aug
-data/test/result/
+data/result

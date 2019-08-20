@@ -4,6 +4,7 @@ from tensorboardHelper import *
 from logHelper import *
 from filterVisualizationHelper import VisualizeFilters
 from tensorflow.python.keras.callbacks import TensorBoard
+import tensorflow as tf
 from customCallbacks import AccuracyAndLossCallback
 from feedType import FeedType
 from keras.callbacks import ModelCheckpoint
@@ -11,8 +12,7 @@ import os
 
 # Use pretrained weights or perform training
 USE_PRETRAINED_WEIGHTS = False
-PRETRAINED_WEIGHTS_FILENAME_SAVE = 'best_checkpoint_save.hdf5'
-PRETRAINED_WEIGHTS_FILENAME_LOAD = 'best_checkpoint_load.hdf5'
+PRETRAINED_WEIGHTS_LOAD_PATH = 'best_checkpoint_load.hdf5'
 
 # Feeding mode etc.
 REFEED_DATA = True
@@ -55,14 +55,17 @@ AUG_PARAMETERS = dict(rotation_range=0.2,
    
 VISUALIZE_CONV_FILTERS = False
 
-#PrintImagesWithoutMasks('data/source/image', 'data/source/mask')
-#PrintMasksWithoutImages('data/source/image', 'data/source/mask')
+# OOM solution
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config)
 
 if (DELETE_EMPTY_IMGS):
     DeleteEmptyImgs(SOURCE_PATH, IMAGE_DIR, MASK_DIR)
 
-for img_layer_range in list(zip(range(190, 470, 10),range(200, 480, 10))):      
+for img_layer_range in list(zip(range(360, 470, 10),range(370, 480, 10))):      
     save_path = "{0}/result_{1}".format(RESULT_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
+    pretrained_weights_save_path = '{0}/best_checkpoint_save.hdf5'.format(save_path)
     log_file_path = "{0}/log.txt".format(save_path)
     if (REFEED_DATA):
         ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
@@ -83,7 +86,7 @@ for img_layer_range in list(zip(range(190, 470, 10),range(200, 480, 10))):
     model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
 
     if USE_PRETRAINED_WEIGHTS:
-            model.load_weights(PRETRAINED_WEIGHTS_FILENAME_LOAD)
+            model.load_weights(PRETRAINED_WEIGHTS_LOAD_PATH)
     else:
         # Starting tensorboard server
         tensorboardServer = TensorboardHelper(save_path)
@@ -92,7 +95,7 @@ for img_layer_range in list(zip(range(190, 470, 10),range(200, 480, 10))):
         # Callbacks
         tensorboardCallback = TensorBoard(save_path)
         accuracyAndLossCallback = AccuracyAndLossCallback()
-        checkpointCallback = ModelCheckpoint(PRETRAINED_WEIGHTS_FILENAME_SAVE, monitor='loss',verbose=1, save_best_only=True)
+        checkpointCallback = ModelCheckpoint(pretrained_weights_save_path, monitor='loss',verbose=1, save_best_only=True)
 
         steps_per_epoch = train_set_count
         # Executing training with timestamps and measurements
@@ -104,8 +107,8 @@ for img_layer_range in list(zip(range(190, 470, 10),range(200, 480, 10))):
 
         ExecuteWithLogs("Training", log_file_path, lambda _ = None: model.fit_generator(trainGenerator, steps_per_epoch, EPOCH_COUNT, callbacks = [tensorboardCallback, accuracyAndLossCallback, checkpointCallback]))   
         LogAccuracyAndLoss(log_file_path, accuracyAndLossCallback.accuracy, accuracyAndLossCallback.loss)
-        os.remove(PRETRAINED_WEIGHTS_FILENAME_LOAD)
-        os.rename(PRETRAINED_WEIGHTS_FILENAME_SAVE, PRETRAINED_WEIGHTS_FILENAME_LOAD)
+        os.remove(PRETRAINED_WEIGHTS_LOAD_PATH)
+        os.rename(pretrained_weights_save_path, PRETRAINED_WEIGHTS_LOAD_PATH)
 
     # Executing testing with timestamps and measurements
     testGenerator = CreateTestGenerator(TEST_PATH, TARGET_SIZE, MAX_VALUE)
