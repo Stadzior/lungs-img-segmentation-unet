@@ -256,3 +256,9 @@ def GetRawFileNamesByTransparencyLevel(transparency_level):
         return ["inspi11__1.0__B31f_1022", "inspi10__1.0__B31f_1014", "inspi9__1.0__B31f_1006",
                 "inspi1__1.0__B31f_42", "expi11__1.0__B31f_1018", "expi10__1.0__B31f_1010",
                 "expi9__1.0__B31f_1002", "expi8__1.0__B31f_94", "expi7__1.0__B31f_86", "expi1__1.0__B31f_38"]
+
+def CalculateAutoAugCount(img_layer_range):
+    return 10
+
+def CalculateAutoRanges(img_layer_range):
+    

@@ -7,6 +7,8 @@ from tensorflow.python.keras.callbacks import TensorBoard
 import tensorflow as tf
 from customCallbacks import AccuracyAndLossCallback
 from feedType import FeedType
+from augType import AugType
+from rangeType import RangeType
 from keras.callbacks import ModelCheckpoint
 import os
 
@@ -41,7 +43,9 @@ BIT_DEPTH = 8
 MAX_VALUE = math.pow(2, BIT_DEPTH)-1
 THRESHOLD = 0.5
 
+# Augmentation params
 AUG_ENABLED = True    
+AUG_TYPE = AugType.Auto
 AUG_DIR = 'aug'
 AUG_COUNT = 10
 AUG_PARAMETERS = dict(rotation_range=0.2,
@@ -52,7 +56,13 @@ AUG_PARAMETERS = dict(rotation_range=0.2,
                     horizontal_flip=True,
                     fill_mode='nearest')
    
+# Convolutional filters visualization
 VISUALIZE_CONV_FILTERS = False
+
+# Layer range params
+RANGE_TYPE = RangeType.Explicit
+IMG_LAYER_RANGE = (0, 469)
+RANGE_FIXED_SIZE = 10
 
 # OOM solution
 config = tf.ConfigProto()
@@ -62,10 +72,15 @@ sess = tf.Session(config=config)
 if (DELETE_EMPTY_IMGS):
     DeleteEmptyImgs(SOURCE_PATH, IMAGE_DIR, MASK_DIR)
 
-for img_layer_range in list(zip(range(360, 380, 10), range(370, 390, 10))):      
+img_layer_ranges = [IMG_LAYER_RANGE] if RANGE_TYPE == RangeType.Explicit else \
+    list(zip(range(IMG_LAYER_RANGE[0], IMG_LAYER_RANGE[1], RANGE_FIXED_SIZE), range(IMG_LAYER_RANGE[0]+RANGE_FIXED_SIZE, IMG_LAYER_RANGE[1]+RANGE_FIXED_SIZE, RANGE_FIXED_SIZE))) if RANGE_TYPE == RangeType.FixedSize else \
+        CalculateAutoRanges(IMG_LAYER_RANGE)
+
+for img_layer_range in img_layer_ranges:      
     save_path = "{0}/result_{1}".format(RESULT_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
     pretrained_weights_save_path = '{0}/best_checkpoint_save.hdf5'.format(save_path)
     log_file_path = "{0}/log.txt".format(save_path)
+    
     if (REFEED_DATA):
         ClearSets(TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, AUG_DIR)
         train_set_count, test_set_count = FeedSets(SOURCE_PATH, TRAIN_PATH, TEST_PATH, IMAGE_DIR, MASK_DIR, FEED_TYPE, TRAIN_SET_COUNT, TEST_SET_COUNT, TRAIN_TO_TEST_RATIO, SAMPLE_COUNT, PER_RAW, img_layer_range)
@@ -78,9 +93,11 @@ for img_layer_range in list(zip(range(360, 380, 10), range(370, 390, 10))):
         continue;    
     if not os.path.exists(save_path):
         os.makedirs(save_path)
+    
+    aug_count = AUG_COUNT if AUG_TYPE == AugType.Explicit else CalculateAutoAugCount(img_layer_range)
 
     LogParameters(log_file_path, TARGET_SIZE, EPOCH_COUNT, SAMPLE_COUNT, train_set_count,
-                    test_set_count, BATCH_SIZE, BIT_DEPTH, THRESHOLD, AUG_COUNT, img_layer_range, AUG_PARAMETERS)
+                    test_set_count, BATCH_SIZE, BIT_DEPTH, THRESHOLD, aug_count, img_layer_range, AUG_PARAMETERS)
 
     model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
 
