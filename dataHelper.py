@@ -122,7 +122,8 @@ def PrintMasksWithoutImages(image_path, mask_path):
 
 def ClearSet(path):
     png_files = list(filter(lambda x: x.endswith(".png"), os.listdir(path)))
-    for file in png_files:
+    for i, file in enumerate(png_files):        
+        print("{0}/{1}".format(i, len(png_files)))
         os.remove("{0}/{1}".format(path, file))
 
 def FeedSets(source_path, train_path, test_path, image_dir, mask_dir, feed_type, train_set_count = 0, test_set_count = 0, train_to_test_ratio = 0, sample_count = 0, per_raw = True, img_layer_range  = (0, 468)):
@@ -257,8 +258,8 @@ def GetRawFileNamesByTransparencyLevel(transparency_level):
                 "inspi1__1.0__B31f_42", "expi11__1.0__B31f_1018", "expi10__1.0__B31f_1010",
                 "expi9__1.0__B31f_1002", "expi8__1.0__B31f_94", "expi7__1.0__B31f_86", "expi1__1.0__B31f_38"]
 
-def CalculateAutoAugCount(img_layer_range):
-    return 10
+# def CalculateAutoAugCount(img_layer_range):
+#     return 10
 
-def CalculateAutoRanges(img_layer_range):
+# def CalculateAutoRanges(img_layer_range):
     

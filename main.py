@@ -17,7 +17,7 @@ USE_PRETRAINED_WEIGHTS = True
 PRETRAINED_WEIGHTS_LOAD_PATH = 'best_checkpoint_load.hdf5'
 
 # Feeding mode etc.
-REFEED_DATA = True
+REFEED_DATA = False
 FEED_TYPE = FeedType.ByRatio
 PER_RAW = True # Determines if division should be based per image or per raw file
 DELETE_EMPTY_IMGS = False # It deletes empties from source directory!
@@ -31,7 +31,7 @@ TRAIN_SET_COUNT = 8
 TEST_SET_COUNT = 2
 
 TARGET_SIZE = (512, 512)
-EPOCH_COUNT = 2
+EPOCH_COUNT =  2
 BATCH_SIZE = 1
 SOURCE_PATH = 'data/source'
 TEST_PATH = 'data/test'
@@ -45,7 +45,7 @@ THRESHOLD = 0.5
 
 # Augmentation params
 AUG_ENABLED = True    
-AUG_TYPE = AugType.Auto
+AUG_TYPE = AugType.Explicit
 AUG_DIR = 'aug'
 AUG_COUNT = 10
 AUG_PARAMETERS = dict(rotation_range=0.2,
@@ -57,7 +57,7 @@ AUG_PARAMETERS = dict(rotation_range=0.2,
                     fill_mode='nearest')
    
 # Convolutional filters visualization
-VISUALIZE_CONV_FILTERS = False
+VISUALIZE_CONV_FILTERS = True
 
 # Layer range params
 RANGE_TYPE = RangeType.Explicit
