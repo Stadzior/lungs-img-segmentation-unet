@@ -20,3 +20,5 @@ class TensorboardHelper:
 # Starting tensorboard server
 tensorboardServer = TensorboardHelper(".")
 tensorboardServer.run()
+
+input("You can now go to Tensorboard url and look into the statistics (if training was performed).\nTo end session and kill Tensorboard instance input any key...")
