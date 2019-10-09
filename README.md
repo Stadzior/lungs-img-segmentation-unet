@@ -37,7 +37,7 @@ The following project was tested on Python 3.6.8 64bit on Windows 10.
     - mask - contains binary masks
 6. After the process termination in `.\data\results\result_[]` you can find:
     - segmentation results as 8bit .png files
-    - best trained weights as .hdf5 file
+    - best trained weights as .hdf5 file (it is a large file ~300MB)
     - process logs as .txt file
     - tensorboard tfevents file
     

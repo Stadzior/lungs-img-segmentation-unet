@@ -7,7 +7,6 @@ from tensorflow.python.keras.callbacks import TensorBoard
 import tensorflow as tf
 from customCallbacks import AccuracyAndLossCallback
 from feedType import FeedType
-from augType import AugType
 from rangeType import RangeType
 from keras.callbacks import ModelCheckpoint
 import os
@@ -19,7 +18,7 @@ PRETRAINED_WEIGHTS_LOAD_PATH = 'best_checkpoint_load.hdf5'
 # Feeding mode etc.
 REFEED_DATA = False #Determines if data should be flushed and refeed from .\source directory.
 FEED_TYPE = FeedType.ByRatio
-PER_RAW = True # Determines if division should be based per image or per raw file
+PER_RAW = False # Determines if division should be based per image or per raw file
 DELETE_EMPTY_IMGS = False # Be careful, it deletes empty (pure black) images from source directory
 
 # Used by FeedType.ByRatio, ignored if FEED_TYPE = FeedType.ByCounts
@@ -46,7 +45,7 @@ THRESHOLD = 0.5 #It set's the threshold for segmentation. The output masks will 
 # Augmentation params
 AUG_ENABLED = True    
 AUG_DIR = 'aug'
-AUG_COUNT = 10
+AUG_COUNT = 3
 AUG_PARAMETERS = dict(rotation_range=0.2,
                     width_shift_range=0.05,
                     height_shift_range=0.05,
@@ -56,11 +55,11 @@ AUG_PARAMETERS = dict(rotation_range=0.2,
                     fill_mode='nearest')
    
 # Convolutional filters visualization
-VISUALIZE_CONV_FILTERS = True
+VISUALIZE_CONV_FILTERS = False
 
 # Layer range params
 RANGE_TYPE = RangeType.Explicit #Explicit - use only certain range (usefull if you want to perform eveything on e.g. boundary areas), FIXED_SIZE - perform eveything on multiple ranges of fixed sizes.
-IMG_LAYER_RANGE = (0, 469) #Specifies range to use in RangeType.Explicit, ignored if RANGE_TYPE = RangeType.FixedSize
+IMG_LAYER_RANGE = (251, 307) #Specifies range to use in RangeType.Explicit, ignored if RANGE_TYPE = RangeType.FixedSize
 RANGE_FIXED_SIZE = 10 #Specifies range to use in RangeType.FixedSize, ignored if RANGE_TYPE = RangeType.Explicit
 
 # OOM solution https://stackoverflow.com/questions/36927607/how-can-i-solve-ran-out-of-gpu-memory-in-tensorflow
@@ -119,8 +118,6 @@ for img_layer_range in img_layer_ranges:
 
         ExecuteWithLogs("Training", log_file_path, lambda _ = None: model.fit_generator(trainGenerator, steps_per_epoch, EPOCH_COUNT, callbacks = [tensorboardCallback, accuracyAndLossCallback, checkpointCallback]))   
         LogAccuracyAndLoss(log_file_path, accuracyAndLossCallback.accuracy, accuracyAndLossCallback.loss)
-        os.remove(PRETRAINED_WEIGHTS_LOAD_PATH)
-        os.rename(pretrained_weights_save_path, PRETRAINED_WEIGHTS_LOAD_PATH)
 
     # Executing testing with timestamps and measurements
     testGenerator = CreateTestGenerator(TEST_PATH, TARGET_SIZE, MAX_VALUE)

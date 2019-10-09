@@ -1,0 +1,22 @@
+MODEL:
+target size: 512x512
+epoch count: 2
+sample count: 0
+train set count: 46
+test set count: 11
+img layer range: (251,307)
+batch size: 1
+bit depth: 8
+threshold: 0.5
+AUGMENTATION:
+aug count: 3
+rotation range: 0.2
+width shift range: 0.05
+height shift range: 0.05
+shear range: 0.05
+zoom range: 0.05
+horizontal flip: True
+fill mode: nearest
+Training started at 09-10-2019, 22:44:32.
+Training ended at 09-10-2019, 22:49:02 and lasted 0h 4m 30s.
+Accuracy: 0.9174880981445312,  Loss: 1.3299384117126465
