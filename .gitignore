@@ -105,14 +105,3 @@ venv.bak/
 
 # vscode
 .vscode
-
-# datafiles
-*.mhd
-*.raw
-*.npy
-*.png
-# pretrained weights files
-*.hdf5
-
-data/train/aug
-data/result

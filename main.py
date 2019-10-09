@@ -17,16 +17,16 @@ USE_PRETRAINED_WEIGHTS = True
 PRETRAINED_WEIGHTS_LOAD_PATH = 'best_checkpoint_load.hdf5'
 
 # Feeding mode etc.
-REFEED_DATA = False
+REFEED_DATA = False #Determines if data should be flushed and refeed from .\source directory.
 FEED_TYPE = FeedType.ByRatio
 PER_RAW = True # Determines if division should be based per image or per raw file
-DELETE_EMPTY_IMGS = False # It deletes empties from source directory!
+DELETE_EMPTY_IMGS = False # Be careful, it deletes empty (pure black) images from source directory
 
-# Used by FeedType.ByRatio
-SAMPLE_COUNT = 0 # Sth less than 1 to use whatever was copied into train/test dirs
+# Used by FeedType.ByRatio, ignored if FEED_TYPE = FeedType.ByCounts
+SAMPLE_COUNT = 0 # Something less than 1 to use whatever was copied into train/test dirs
 TRAIN_TO_TEST_RATIO = 0.8
 
-# Used by FeedType.ByCounts
+# Used by FeedType.ByCounts, ignored if FEED_TYPE = FeedType.ByRatio
 TRAIN_SET_COUNT = 8
 TEST_SET_COUNT = 2
 
@@ -41,11 +41,10 @@ IMAGE_DIR = 'image'
 MASK_DIR = 'mask'
 BIT_DEPTH = 8
 MAX_VALUE = math.pow(2, BIT_DEPTH)-1
-THRESHOLD = 0.5
+THRESHOLD = 0.5 #It set's the threshold for segmentation. The output masks will have pixel values from 0.0 to 1.0.
 
 # Augmentation params
 AUG_ENABLED = True    
-AUG_TYPE = AugType.Explicit
 AUG_DIR = 'aug'
 AUG_COUNT = 10
 AUG_PARAMETERS = dict(rotation_range=0.2,
@@ -60,11 +59,11 @@ AUG_PARAMETERS = dict(rotation_range=0.2,
 VISUALIZE_CONV_FILTERS = True
 
 # Layer range params
-RANGE_TYPE = RangeType.Explicit
-IMG_LAYER_RANGE = (0, 469)
-RANGE_FIXED_SIZE = 10
+RANGE_TYPE = RangeType.Explicit #Explicit - use only certain range (usefull if you want to perform eveything on e.g. boundary areas), FIXED_SIZE - perform eveything on multiple ranges of fixed sizes.
+IMG_LAYER_RANGE = (0, 469) #Specifies range to use in RangeType.Explicit, ignored if RANGE_TYPE = RangeType.FixedSize
+RANGE_FIXED_SIZE = 10 #Specifies range to use in RangeType.FixedSize, ignored if RANGE_TYPE = RangeType.Explicit
 
-# OOM solution
+# OOM solution https://stackoverflow.com/questions/36927607/how-can-i-solve-ran-out-of-gpu-memory-in-tensorflow
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
@@ -73,8 +72,7 @@ if (DELETE_EMPTY_IMGS):
     DeleteEmptyImgs(SOURCE_PATH, IMAGE_DIR, MASK_DIR)
 
 img_layer_ranges = [IMG_LAYER_RANGE] if RANGE_TYPE == RangeType.Explicit else \
-    list(zip(range(IMG_LAYER_RANGE[0], IMG_LAYER_RANGE[1], RANGE_FIXED_SIZE), range(IMG_LAYER_RANGE[0]+RANGE_FIXED_SIZE, IMG_LAYER_RANGE[1]+RANGE_FIXED_SIZE, RANGE_FIXED_SIZE))) if RANGE_TYPE == RangeType.FixedSize else \
-        CalculateAutoRanges(IMG_LAYER_RANGE)
+    list(zip(range(IMG_LAYER_RANGE[0], IMG_LAYER_RANGE[1], RANGE_FIXED_SIZE), range(IMG_LAYER_RANGE[0]+RANGE_FIXED_SIZE, IMG_LAYER_RANGE[1]+RANGE_FIXED_SIZE, RANGE_FIXED_SIZE)))
 
 for img_layer_range in img_layer_ranges:      
     save_path = "{0}/result_{1}".format(RESULT_PATH, datetime.datetime.now().strftime("%d%m%Y_%H%M%S"))
@@ -93,11 +91,9 @@ for img_layer_range in img_layer_ranges:
         continue;    
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    
-    aug_count = AUG_COUNT if AUG_TYPE == AugType.Explicit else CalculateAutoAugCount(img_layer_range)
 
     LogParameters(log_file_path, TARGET_SIZE, EPOCH_COUNT, SAMPLE_COUNT, train_set_count,
-                    test_set_count, BATCH_SIZE, BIT_DEPTH, THRESHOLD, aug_count, img_layer_range, AUG_PARAMETERS)
+                    test_set_count, BATCH_SIZE, BIT_DEPTH, THRESHOLD, AUG_COUNT, img_layer_range, AUG_PARAMETERS)
 
     model = Unet((TARGET_SIZE[0], TARGET_SIZE[1], 1))
 
