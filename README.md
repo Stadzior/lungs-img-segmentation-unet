@@ -3,6 +3,10 @@ The main part of the solution, it contains U-net model, performs sets splitting,
 This repo operates on png images. If you have raw files to work on you can go to [lungs-img-segmentation-preprocessing](https://github.com/Stadzior/lungs-img-segmentation-preprocessing). If you already have your segmentation results you can skip to [lungs-img-segmentation-postprocessing](https://github.com/Stadzior/lungs-img-segmentation-postprocessing).<br />
 The following project was tested on Python 3.6.8 64bit on Windows 10.
 
+U-net is a convolutional neural network designed to process biomedical images: https://lmb.informatik.uni-freiburg.de/people/ronneber/u-net/<br />
+Model was built based on zhixuhao U-net implementation, check out his repository here: https://github.com/zhixuhao/unet
+
+![title image](lungs-img-segmentation-unet.png)
 ## Quick config:  
 1. Download Miniconda for Windows from [here](https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe).  
 2. Install Miniconda  
